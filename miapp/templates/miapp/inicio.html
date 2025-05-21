@@ -1,0 +1,109 @@
+{% extends 'miapp/base.html' %} 
+{% load static %}
+{% block title %}Ferremas{% endblock %}
+{% block content %}
+<!-- titulo -->
+<div class="position-relative text-center text-white rounded" style="height: 300px; overflow: hidden;">
+    <img src="{% static 'imagenes/bodega.jpg' %}" alt="Fondo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 2;"></div>
+    <div class="position-relative d-flex flex-column justify-content-center align-items-center h-100 p-5" style="z-index: 3;">
+        <h1 class="display-4 fw-bold" style="color: rgba(255, 255, 255, 0.9);">¡TODO LO QUE NECESITAS PARA CONSTRUIR TUS IDEAS!</h1>
+        <div class="mt-4 d-flex justify-content-center gap-3">
+            <a href="#" class="btn btn-warning btn-lg">Explorar productos</a>
+            <a href="#" class="btn btn-outline-light btn-lg">Ver ofertas</a>
+        </div>
+    </div>
+</div>
+
+<!-- Categorías -->
+<section class="py-5 text-center">
+    <h2 class="mb-4">Explora por categoría</h2>
+    <div class="row justify-content-center">
+        <div class="col-6 col-md-3 mb-4">
+            <div class="p-3 border rounded bg-light">
+                <img src="{% static 'imagenes/herramientas.jpg' %}" alt="" width="100px">
+                <h5 class="mt-3">Herramientas manuales</h5>
+                <a href="#" class="btn btn-outline-warning mt-2">Ver más</a>
+            </div>
+        </div>
+        
+        <div class="col-6 col-md-3 mb-4">
+            <div class="p-3 border rounded bg-light text-center">
+                <img src="{% static 'imagenes/taladro.jpg' %}" alt="Taladro" width="100px">
+                <h5 class="mt-3">Herramientas eléctricas</h5>
+                <a href="#" class="btn btn-outline-warning mt-2">Ver más</a>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-3 mb-4">
+            <div class="p-3 border rounded bg-light">
+                <img src="{% static 'imagenes/brochita.png' %}" alt="" style="width:67px">
+                <h5 class="mt-3">Pinturas y acabados</h5>
+                <a href="#" class="btn btn-outline-warning mt-2">Ver más</a>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-4">
+            <div class="p-3 border rounded bg-light">
+                <img src="{% static 'imagenes/casco.jpg' %}" alt="" style="width:100px">
+                <h5 class="mt-3">Construcción</h5>
+                <a href="#" class="btn btn-outline-warning mt-2">Ver más</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Ofertas -->
+<section class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Ofertas destacadas</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center">
+                    <h5 class="card-title fw-bold large-text">Taladro Bauker</h5>
+                    <img src="{% static 'imagenes/taladro.jpg' %}" class="card-img-top p-4" alt="Taladro" style="height: 350px; object-fit: cover;">
+                    <div class="card-body">
+                        <p class="text-muted text-decoration-line-through">$70.000</p>
+                        <h5 class="card-title text-danger fw-bold">$54.990</h5>
+                        <a href="#" class="btn btn-warning">Agregar al carrito</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center">
+                    <h5 class="card-title fw-bold large-text">Martillo De Thor</h5>
+                    <img src="{% static 'imagenes/martillodethor.png' %}" class="card-img-top p-4" alt="Martillo">
+                    <div class="card-body">
+                        <p class="text-muted text-decoration-line-through">$24.990</p>
+                        <h5 class="card-title text-danger fw-bold">$14.990</h5>
+                        <a href="#" class="btn btn-warning">Agregar al carrito</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center">
+                    <h5 class="card-title fw-bold large-text">Cinta Metrica</h5>
+                    <img src="{% static 'imagenes/cintademedicion.png' %}" class="card-img-top p-4" alt="Wincha">
+                    <div class="card-body hover-scale">
+                        <p class="text-muted text-decoration-line-through">$37.000</p>
+                        <h5 class="card-title text-danger fw-bold">$25.990</h5>
+                        <a href="#" class="btn btn-warning">Agregar al carrito</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mapa y footer -->
+<section class="bg-white py-5">
+    <div class="container text-center">
+        <h4>¿Dónde estamos?</h4>
+        <p>📍 Av. Lorem Ipsum 123, Ciudad</p>
+        <p>📞 +56 9 3435 1175 | ✉️ contacto@ferreteriapepe.cl</p>
+        <a href="https://wa.me/56934351175" target="_blank" class="btn btn-success mt-3">
+            <img src="{% static 'imagenes/WhatsApp.jpg' %}" alt="WhatsApp" width="30" class="me-2">
+            Escríbenos por WhatsApp
+        </a>
+    </div>
+</section>
+{% endblock %}
