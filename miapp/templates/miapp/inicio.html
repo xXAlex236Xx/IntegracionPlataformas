@@ -147,8 +147,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.message) {
-                alert(data.message); // Simple alert
-                // Optional: Update cart icon count or redirect
+                alert(data.message);
             } else if (data.error) {
                 alert('Error: ' + data.error);
             }

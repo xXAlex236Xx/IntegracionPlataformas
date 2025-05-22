@@ -90,9 +90,8 @@
         .then(response => response.json())
         .then(data => {
             if (data.message) {
-                alert(data.message); // Use a simple alert for now
-                // Optionally, redirect to cart or show a cart icon update
-                window.location.href = '{% url "view_cart" %}'; // Redirect to cart
+                alert(data.message);
+                window.location.href = '{% url "view_cart" %}';
             } else if (data.error) {
                 alert('Error: ' + data.error);
             }

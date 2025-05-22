@@ -34,7 +34,7 @@ class LoginForm(AuthenticationForm):
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
-        fields = ['codigo', 'nombre', 'descripcion', 'categoria', 'precio', 'stock', 'imagen'] # Added 'imagen'
+        fields = ['codigo', 'nombre', 'descripcion', 'categoria', 'precio', 'stock', 'imagen']
         widgets = {
             'codigo': forms.TextInput(attrs={'class': 'form-control'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
@@ -42,7 +42,6 @@ class ProductoForm(forms.ModelForm):
             'categoria': forms.Select(attrs={'class': 'form-control'}),
             'precio': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
-            # 'imagen': forms.ClearableFileInput(attrs={'class': 'form-control'}), # Default widget is fine
         }
 
 class CategoriaForm(forms.ModelForm):
@@ -52,5 +51,4 @@ class CategoriaForm(forms.ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            # 'imagen': forms.ClearableFileInput(attrs={'class': 'form-control'}), # Default widget is fine
         }

@@ -110,12 +110,10 @@
             `;
             messagesDiv.innerHTML += alertHtml;
         } else {
-            // Fallback if .messages div isn't found (e.g., if you remove it)
             alert(text);
         }
     }
 
-    // Function to update quantity or remove item
     function updateQuantity(itemId, change, exactQuantity = null) {
         let currentQuantityInput = document.getElementById(`quantity-${itemId}`);
         let newQuantity;
@@ -126,7 +124,7 @@
             newQuantity = parseInt(currentQuantityInput.value) + change;
         }
 
-        if (newQuantity < 0) newQuantity = 0; // Prevent negative quantity
+        if (newQuantity < 0) newQuantity = 0;
 
         fetch('{% url "update_cart_item_quantity" %}', {
             method: 'POST',
@@ -144,24 +142,18 @@
             if (data.message) {
                 showMessage('success', data.message);
                 if (newQuantity === 0) {
-                    // Remove row if quantity is 0
                     document.getElementById(`cart-item-row-${itemId}`).remove();
-                    // Reload page if no items left or update totals dynamically
                     if (document.querySelectorAll('tbody tr').length === 0) {
-                        location.reload(); // Reload to show "Cart is empty" message
+                        location.reload();
                     } else {
-                        // Dynamically update totals if you have more advanced JS
-                        // For now, a simple reload is easier for total price update
                         location.reload();
                     }
                 } else {
                     currentQuantityInput.value = newQuantity;
-                    // You might want to update the subtotal dynamically here too
-                    location.reload(); // Simple reload to update totals for now
+                    location.reload();
                 }
             } else if (data.error) {
                 showMessage('danger', data.error);
-                // Revert quantity if error
                 currentQuantityInput.value = parseInt(currentQuantityInput.value) - change;
             }
         })
@@ -171,10 +163,9 @@
         });
     }
 
-    // Function to remove item directly
     function removeItem(itemId) {
         if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
-            return; // Do nothing if user cancels
+            return;
         }
         fetch('{% url "remove_from_cart" %}', {
             method: 'POST',
@@ -192,9 +183,9 @@
                 showMessage('info', data.message);
                 document.getElementById(`cart-item-row-${itemId}`).remove();
                 if (document.querySelectorAll('tbody tr').length === 0) {
-                    location.reload(); // Reload to show "Cart is empty" message
+                    location.reload();
                 } else {
-                    location.reload(); // Simple reload to update totals
+                    location.reload();
                 }
             } else if (data.error) {
                 showMessage('danger', data.error);
