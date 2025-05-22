@@ -77,9 +77,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'miapp_db'),
+        'USER': os.environ.get('DB_USER', 'administrador'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Alexgamer236eselmaspro'),
+        'HOST': os.environ.get('DB_HOST', 'miapp-db-prod.cw9c5ba350dh.us-east-1.rds.amazonaws.com'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
