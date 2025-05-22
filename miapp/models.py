@@ -1,6 +1,7 @@
 # miapp/models.py
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings # Import settings to get AUTH_USER_MODEL
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -80,3 +81,47 @@ class Contacto(models.Model):
 
     def __str__(self):
         return f"Mensaje de {self.nombre} - {self.asunto}"
+
+# --- NEW MODELS FOR SHOPPING CART ---
+
+class Cart(models.Model):
+    # Links to the User model configured in settings.AUTH_USER_MODEL
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='cart')
+    # For anonymous users, we can store a session key to persist the cart
+    session_key = models.CharField(max_length=40, null=True, blank=True, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        if self.user:
+            return f"Carrito de {self.user.username}"
+        elif self.session_key:
+            return f"Carrito (sesión: {self.session_key[:5]}...)" # Show first 5 chars of session key
+        return "Carrito Anónimo"
+
+    def get_total_price(self):
+        """Calculates the total price of all items in the cart."""
+        # Sums the total price of each CartItem
+        return sum(item.get_total_price() for item in self.items.all())
+
+    def get_total_items(self):
+        """Calculates the total number of individual items (sum of quantities) in the cart."""
+        # Sums the quantity of each CartItem
+        return sum(item.quantity for item in self.items.all())
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1) # Quantity must be positive
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Ensures that a specific product can only appear once in a given cart
+        unique_together = ('cart', 'producto') 
+
+    def __str__(self):
+        return f"{self.quantity} x {self.producto.nombre} en carrito de {self.cart}"
+
+    def get_total_price(self):
+        """Calculates the total price for this specific cart item."""
+        return self.quantity * self.producto.precio

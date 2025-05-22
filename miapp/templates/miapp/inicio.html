@@ -26,11 +26,11 @@
             {% for categoria in categorias %}
             <div class="col-6 col-md-3 mb-4">
                 <div class="p-3 border rounded bg-light d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;"> {# Increased min-height for image #}
-                    {% if categoria.imagen %}
+                    {% if categoria.imagen %}
                         <img src="{{ categoria.imagen.url }}" alt="{{ categoria.nombre }}" class="img-fluid mb-2" style="max-height: 100px; object-fit: contain;"> {# Added image for category #}
-                    {% else %}
-                        <img src="{% static 'imagenes/categoria_default.png' %}" alt="Categoría" class="img-fluid mb-2" style="max-height: 100px; object-fit: contain;"> {# Placeholder image #}
-                    {% endif %}
+                    {% else %}
+                        <img src="{% static 'imagenes/categoria_default.png' %}" alt="Categoría" class="img-fluid mb-2" style="max-height: 100px; object-fit: contain;"> {# Placeholder image #}
+                    {% endif %}
                     <h5 class="mt-2 mb-auto">{{ categoria.nombre }}</h5>
                     <a href="{% url 'producto_list' %}?categoria={{ categoria.id }}" class="btn btn-outline-warning mt-2">Ver más</a>
                 </div>
@@ -54,16 +54,26 @@
                 {% for producto in productos_destacados %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100 text-center">
-                        {% if producto.imagen %}
-                            <img src="{{ producto.imagen.url }}" class="card-img-top mx-auto mt-3" alt="{{ producto.nombre }}" style="max-width: 150px; max-height: 150px; object-fit: contain;"> {# Added product image #}
-                        {% else %}
-                            <img src="{% static 'imagenes/producto_default.png' %}" class="card-img-top mx-auto mt-3" alt="Producto" style="max-width: 150px; max-height: 150px; object-fit: contain;"> {# Placeholder image #}
-                        {% endif %}
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" class="card-img-top mx-auto mt-3" alt="{{ producto.nombre }}" style="max-width: 150px; max-height: 150px; object-fit: contain;">
+                        {% else %}
+                            <img src="{% static 'imagenes/producto_default.png' %}" class="card-img-top mx-auto mt-3" alt="Producto" style="max-width: 150px; max-height: 150px; object-fit: contain;">
+                        {% endif %}
                         <div class="card-body d-flex flex-column justify-content-between">
                             <h5 class="card-title fw-bold">{{ producto.nombre }}</h5>
                             <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
                             <h5 class="card-title text-danger fw-bold mt-auto">${{ producto.precio|floatformat:2 }}</h5>
-                            <a href="{% url 'producto_detail' producto.codigo %}" class="btn btn-warning">Ver detalles</a>
+                            {# Add quantity input and Add to Cart button #}
+                            <div class="d-flex align-items-center justify-content-center mt-2 mb-3">
+                                <input type="number" id="quantity-{{ producto.codigo }}" value="1" min="1" max="{{ producto.stock }}" class="form-control text-center me-2" style="width: 80px;">
+                                <button type="button" class="btn btn-warning" onclick="addToCart('{{ producto.codigo }}', 'quantity-{{ producto.codigo }}')" {% if producto.stock == 0 %}disabled{% endif %}>
+                                    <i class="bi bi-cart-plus"></i> Añadir
+                                </button>
+                            </div>
+                            {% if producto.stock == 0 %}
+                                <small class="text-danger">¡Sin stock!</small>
+                            {% endif %}
+                            <a href="{% url 'producto_detail' producto.codigo %}" class="btn btn-outline-primary mt-auto">Ver detalles</a> {# Changed to mt-auto for consistent button placement #}
                         </div>
                     </div>
                 </div>
@@ -90,5 +100,64 @@
         </a>
     </div>
 </section>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function addToCart(productCode, quantityInputId) {
+        const quantityInput = document.getElementById(quantityInputId);
+        const quantity = parseInt(quantityInput.value);
+        const maxStock = parseInt(quantityInput.max);
+
+        if (quantity <= 0) {
+            alert('La cantidad debe ser al menos 1.');
+            return;
+        }
+        if (quantity > maxStock) {
+            alert(`No puedes añadir más de ${maxStock} unidades. Sólo quedan ${maxStock} en stock.`);
+            return;
+        }
+
+        fetch('{% url "add_to_cart" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                codigo: productCode,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message); // Simple alert
+                // Optional: Update cart icon count or redirect
+            } else if (data.error) {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al añadir el producto al carrito.');
+        });
+    }
+</script>
 
 {% endblock %}

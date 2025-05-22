@@ -1,10 +1,8 @@
-# miapp/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Producto, Categoria, Sucursal, Stock, Pedido, Contacto
+from .models import Producto, Categoria, Sucursal, Stock, Pedido, Contacto, Cart, CartItem
 from .serializers import ProductoSerializer, CategoriaSerializer, StockSerializer, PedidoSerializer, ContactoSerializer
 import requests
 from django.contrib.auth import authenticate, login, logout
@@ -12,6 +10,51 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import RegistroForm, LoginForm, ProductoForm, CategoriaForm
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.db.models import F
+
+def _get_or_create_cart(request):
+    if request.user.is_authenticated:
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        if created and request.session.get('session_cart_key'):
+            try:
+                anonymous_cart = Cart.objects.get(session_key=request.session['session_cart_key'])
+                for item in anonymous_cart.items.all():
+                    existing_item = cart.items.filter(producto=item.producto).first()
+                    if existing_item:
+                        existing_item.quantity = F('quantity') + item.quantity
+                        existing_item.save()
+                    else:
+                        item.cart = cart
+                        item.save()
+                anonymous_cart.delete()
+                del request.session['session_cart_key']
+            except Cart.DoesNotExist:
+                pass
+        elif not created and request.session.get('session_cart_key'):
+            try:
+                anonymous_cart = Cart.objects.get(session_key=request.session['session_cart_key'])
+                for item in anonymous_cart.items.all():
+                    existing_item = cart.items.filter(producto=item.producto).first()
+                    if existing_item:
+                        existing_item.quantity = F('quantity') + item.quantity
+                        existing_item.save()
+                    else:
+                        item.cart = cart
+                        item.save()
+                anonymous_cart.delete()
+                del request.session['session_cart_key']
+            except Cart.DoesNotExist:
+                pass
+        return cart
+    else:
+        session_cart_key = request.session.get('session_cart_key')
+        if not session_cart_key:
+            request.session.save()
+            session_cart_key = request.session.session_key
+            request.session['session_cart_key'] = session_cart_key
+
+        cart, created = Cart.objects.get_or_create(session_key=session_cart_key)
+        return cart
 
 def inicio(request):
     categorias = Categoria.objects.all().order_by('nombre')
@@ -52,7 +95,6 @@ def crear_pedido(request):
         try:
             producto = Producto.objects.get(codigo=item['codigo'])
             cantidad = item['cantidad']
-            # Pass precio_unitario to DetallePedido create to store the price at the time of order
             pedido.detallepedido_set.create(producto=producto, cantidad=cantidad, precio_unitario=producto.precio)
         except Producto.DoesNotExist:
             pedido.delete()
@@ -82,16 +124,13 @@ def convertir_moneda(request):
 
     try:
         r = requests.get(url)
-        r.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+        r.raise_for_status()
         data = r.json()
         return Response(data)
     except requests.exceptions.RequestException as e:
-        # Handle specific request errors (e.g., connection issues, timeout)
         return Response({'error': f'Error al conectar con la API externa: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:
-        # Catch any other unexpected errors
         return Response({'error': f'Ocurrió un error inesperado: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 def registro_view(request):
     if request.method == 'POST':
@@ -107,7 +146,7 @@ def registro_view(request):
             else:
                 user = User.objects.create_user(username=username, email=email, password=password)
                 
-                if codigo_admin == 'ADMIN123': # Código de administrador
+                if codigo_admin == 'ADMIN123':
                     user.is_staff = True
                     user.save()
                     messages.success(request, 'Usuario administrador creado exitosamente. Inicie sesión.')
@@ -116,7 +155,7 @@ def registro_view(request):
                     messages.success(request, 'Usuario registrado exitosamente. Inicie sesión.')
                     return redirect('login')
                 else:
-                    user.delete() # Elimina el usuario si el código es incorrecto
+                    user.delete()
                     messages.error(request, 'Código de administrador incorrecto. Inténtelo de nuevo o regístrese como usuario normal.')
                     return redirect('registro')
         else:
@@ -149,7 +188,7 @@ def logout_view(request):
     return redirect('login')
 
 @user_passes_test(lambda u: u.is_staff)
-@login_required # Added login_required for admin_dashboard
+@login_required
 def admin_dashboard_view(request):
     productos = Producto.objects.all()
     categorias = Categoria.objects.all()
@@ -180,26 +219,21 @@ def borrar_usuario(request, user_id):
     messages.warning(request, "Operación no permitida por GET.")
     return redirect('crud_admin')
 
-# --- CRUD para Productos ---
-
-# READ (Listar Productos)
 def producto_list(request):
     productos = Producto.objects.all().order_by('nombre')
     context = {'productos': productos}
     return render(request, 'miapp/producto_list.html', context)
 
-# READ (Detalle de un Producto)
 def producto_detail(request, codigo):
     producto = get_object_or_404(Producto, codigo=codigo)
     context = {'producto': producto}
     return render(request, 'miapp/producto_detail.html', context)
 
-# CREATE (Crear un Producto) - AHORA MANEJA ARCHIVOS
 @user_passes_test(lambda u: u.is_staff)
 @login_required
 def producto_create(request):
     if request.method == 'POST':
-        form = ProductoForm(request.POST, request.FILES) # <--- ADD request.FILES
+        form = ProductoForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, f'Producto "{form.cleaned_data["nombre"]}" creado exitosamente.')
@@ -211,13 +245,12 @@ def producto_create(request):
     context = {'form': form, 'form_title': 'Crear Nuevo Producto'}
     return render(request, 'miapp/producto_form.html', context)
 
-# UPDATE (Actualizar un Producto) - AHORA MANEJA ARCHIVOS
 @user_passes_test(lambda u: u.is_staff)
 @login_required
 def producto_update(request, codigo):
     producto = get_object_or_404(Producto, codigo=codigo)
     if request.method == 'POST':
-        form = ProductoForm(request.POST, request.FILES, instance=producto) # <--- ADD request.FILES
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
             form.save()
             messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
@@ -229,22 +262,18 @@ def producto_update(request, codigo):
     context = {'form': form, 'form_title': f'Actualizar Producto: {producto.nombre}'}
     return render(request, 'miapp/producto_form.html', context)
 
-# DELETE (Eliminar un Producto) - Added image deletion logic
 @user_passes_test(lambda u: u.is_staff)
 @login_required
 def producto_delete(request, codigo):
     producto = get_object_or_404(Producto, codigo=codigo)
     if request.method == 'POST':
-        # Optional: Delete the image file from the filesystem when deleting the object
         if producto.imagen:
-            producto.imagen.delete(save=False) # save=False prevents trying to save the object after deleting the image
+            producto.imagen.delete(save=False)
         producto.delete()
         messages.success(request, f'Producto "{producto.nombre}" eliminado exitosamente.')
         return redirect('producto_list')
     context = {'producto': producto}
     return render(request, 'miapp/producto_confirm_delete.html', context)
-
-# --- CRUD para Categorías ---
 
 @user_passes_test(lambda u: u.is_staff)
 @login_required
@@ -256,7 +285,7 @@ def categoria_list(request):
 @login_required
 def categoria_create(request):
     if request.method == 'POST':
-        form = CategoriaForm(request.POST, request.FILES) # <--- ADD request.FILES
+        form = CategoriaForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, f'Categoría "{form.cleaned_data["nombre"]}" creada exitosamente.')
@@ -272,7 +301,7 @@ def categoria_create(request):
 def categoria_update(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)
     if request.method == 'POST':
-        form = CategoriaForm(request.POST, request.FILES, instance=categoria) # <--- ADD request.FILES
+        form = CategoriaForm(request.POST, request.FILES, instance=categoria)
         if form.is_valid():
             form.save()
             messages.success(request, f'Categoría "{categoria.nombre}" actualizada exitosamente.')
@@ -288,10 +317,108 @@ def categoria_update(request, pk):
 def categoria_delete(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)
     if request.method == 'POST':
-        # Optional: Delete the image file from the filesystem when deleting the object
         if categoria.imagen:
             categoria.imagen.delete(save=False)
         categoria.delete()
         messages.success(request, f'Categoría "{categoria.nombre}" eliminada exitosamente.')
         return redirect('categoria_list')
     return render(request, 'miapp/categoria_confirm_delete.html', {'categoria': categoria})
+
+@api_view(['POST'])
+def add_to_cart(request):
+    product_code = request.data.get('codigo')
+    quantity = int(request.data.get('quantity', 1))
+
+    if not product_code:
+        return Response({'error': 'Product code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if quantity <= 0:
+        return Response({'error': 'Quantity must be positive.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        producto = Producto.objects.get(codigo=product_code)
+    except Producto.DoesNotExist:
+        return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if producto.stock < quantity:
+        messages.error(request, f'No hay suficiente stock para "{producto.nombre}". Stock disponible: {producto.stock}.')
+        return Response({'error': 'Not enough stock available.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    cart = _get_or_create_cart(request)
+
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        producto=producto,
+        defaults={'quantity': quantity}
+    )
+
+    if not created:
+        if cart_item.quantity + quantity > producto.stock:
+            messages.error(request, f'No puedes añadir más de {producto.stock} unidades de "{producto.nombre}" en total (ya tienes {cart_item.quantity}).')
+            return Response({'error': 'Adding this quantity would exceed available stock.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_item.quantity = F('quantity') + quantity
+        cart_item.save()
+        cart_item.refresh_from_db()
+        messages.success(request, f'Cantidad de "{producto.nombre}" actualizada a {cart_item.quantity} en el carrito.')
+    else:
+        messages.success(request, f'"{producto.nombre}" añadido al carrito.')
+
+    return Response({'message': 'Product added to cart successfully.', 'cart_item_id': cart_item.id}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def remove_from_cart(request):
+    cart_item_id = request.data.get('cart_item_id')
+
+    if not cart_item_id:
+        return Response({'error': 'Cart item ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    cart = _get_or_create_cart(request)
+
+    try:
+        cart_item = CartItem.objects.get(id=cart_item_id, cart=cart)
+        product_name = cart_item.producto.nombre
+        cart_item.delete()
+        messages.info(request, f'"{product_name}" eliminado del carrito.')
+        return Response({'message': 'Product removed from cart successfully.'}, status=status.HTTP_200_OK)
+    except CartItem.DoesNotExist:
+        return Response({'error': 'Cart item not found in your cart.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+def update_cart_item_quantity(request):
+    cart_item_id = request.data.get('cart_item_id')
+    new_quantity = int(request.data.get('quantity', 0))
+
+    if not cart_item_id or new_quantity < 0:
+        return Response({'error': 'Cart item ID and a non-negative quantity are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    cart = _get_or_create_cart(request)
+
+    try:
+        cart_item = CartItem.objects.get(id=cart_item_id, cart=cart)
+        
+        if new_quantity > cart_item.producto.stock:
+            messages.error(request, f'No puedes cambiar la cantidad de "{cart_item.producto.nombre}" a {new_quantity}. Stock disponible: {cart_item.producto.stock}.')
+            return Response({'error': 'Quantity exceeds available stock.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_quantity == 0:
+            product_name = cart_item.producto.nombre
+            cart_item.delete()
+            messages.info(request, f'"{product_name}" eliminado del carrito.')
+            return Response({'message': 'Product removed from cart (quantity set to 0).'}, status=status.HTTP_200_OK)
+        else:
+            cart_item.quantity = new_quantity
+            cart_item.save()
+            messages.success(request, f'Cantidad de "{cart_item.producto.nombre}" actualizada a {new_quantity}.')
+            return Response({'message': 'Cart item quantity updated successfully.'}, status=status.HTTP_200_OK)
+    except CartItem.DoesNotExist:
+        return Response({'error': 'Cart item not found in your cart.'}, status=status.HTTP_404_NOT_FOUND)
+
+def view_cart(request):
+    cart = _get_or_create_cart(request)
+    cart_items = cart.items.all()
+    context = {
+        'cart': cart,
+        'cart_items': cart_items,
+    }
+    return render(request, 'miapp/cart.html', context)

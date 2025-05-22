@@ -1,35 +1,106 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Producto: {{ producto.nombre }}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
-        h1 { color: #333; text-align: center; }
-        p { margin-bottom: 10px; }
-        strong { display: inline-block; width: 120px; }
-        .actions a { margin-right: 15px; text-decoration: none; color: #007bff; }
-        .actions a:hover { text-decoration: underline; }
-        .back-link { display: block; margin-top: 20px; text-align: center; text-decoration: none; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Detalle de Producto</h1>
-        <p><strong>Código:</strong> {{ producto.codigo }}</p>
-        <p><strong>Nombre:</strong> {{ producto.nombre }}</p>
-        <p><strong>Categoría:</strong> {{ producto.categoria.nombre }}</p>
-        <p><strong>Precio:</strong> ${{ producto.precio|floatformat:2 }}</p>
-        <p><strong>Stock:</strong> {{ producto.stock }} unidades</p>
-        <p><strong>Descripción:</strong> {{ producto.descripcion|default:"Sin descripción." }}</p>
+{% extends 'miapp/base.html' %}
+{% load static %}
 
-        <div class="actions">
-            <a href="{% url 'producto_update' producto.codigo %}">Editar Producto</a>
-            <a href="{% url 'producto_delete' producto.codigo %}">Eliminar Producto</a>
+{% block title %}{{ producto.nombre }}{% endendblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-5">
+            {% if producto.imagen %}
+                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid rounded shadow-sm">
+            {% else %}
+                <img src="{% static 'imagenes/producto_default.png' %}" alt="No imagen" class="img-fluid rounded shadow-sm">
+            {% endif %}
         </div>
-        <a href="{% url 'producto_list' %}" class="back-link">Volver a la lista de productos</a>
+        <div class="col-md-7">
+            <h1 class="mb-3">{{ producto.nombre }}</h1>
+            <p class="lead text-muted">{{ producto.categoria.nombre }}</p>
+            <p class="fs-4 fw-bold text-success">${{ producto.precio|floatformat:2 }}</p>
+            
+            <hr>
+            
+            <h4 class="mb-3">Descripción:</h4>
+            <p>{{ producto.descripcion|default:"Sin descripción." }}</p>
+            
+            <p class="fw-bold">Stock Disponible: <span class="badge bg-{% if producto.stock > 0 %}success{% else %}danger{% endif %}">{{ producto.stock }}</span></p>
+
+            <div class="d-flex align-items-center mt-4">
+                <input type="number" id="product-quantity" value="1" min="1" max="{{ producto.stock }}" class="form-control me-2" style="width: 80px;">
+                <button type="button" class="btn btn-warning btn-lg" onclick="addToCart('{{ producto.codigo }}')">
+                    <i class="bi bi-cart-plus"></i> Añadir al Carrito
+                </button>
+            </div>
+            {% if producto.stock == 0 %}
+                <div class="alert alert-warning mt-3" role="alert">
+                    ¡Producto sin stock! No puedes añadirlo al carrito.
+                </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary">Volver a Productos</a>
+            </div>
+        </div>
     </div>
-</body>
-</html>
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function addToCart(productCode) {
+        const quantityInput = document.getElementById('product-quantity');
+        const quantity = parseInt(quantityInput.value);
+        const maxStock = parseInt(quantityInput.max);
+
+        if (quantity <= 0) {
+            alert('La cantidad debe ser al menos 1.');
+            return;
+        }
+        if (quantity > maxStock) {
+            alert(`No puedes añadir más de ${maxStock} unidades. Sólo quedan ${maxStock} en stock.`);
+            return;
+        }
+
+        fetch('{% url "add_to_cart" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                codigo: productCode,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message); // Use a simple alert for now
+                // Optionally, redirect to cart or show a cart icon update
+                window.location.href = '{% url "view_cart" %}'; // Redirect to cart
+            } else if (data.error) {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al añadir el producto al carrito.');
+        });
+    }
+</script>
+{% endblock %}

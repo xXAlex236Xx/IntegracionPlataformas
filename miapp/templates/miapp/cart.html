@@ -1,0 +1,209 @@
+{% extends 'miapp/base.html' %}
+{% load static %}
+
+{% block title %}Tu Carrito{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">Tu Carrito de Compras</h1>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if cart_items %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Imagen</th>
+                    <th scope="col">Precio Unitario</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Subtotal</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr id="cart-item-row-{{ item.id }}">
+                    <td><a href="{% url 'producto_detail' item.producto.codigo %}">{{ item.producto.nombre }}</a></td>
+                    <td>
+                        {% if item.producto.imagen %}
+                            <img src="{{ item.producto.imagen.url }}" alt="{{ item.producto.nombre }}" class="img-thumbnail" style="width: 70px; height: 70px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'imagenes/producto_default.png' %}" alt="No imagen" class="img-thumbnail" style="width: 70px; height: 70px; object-fit: cover;">
+                        {% endif %}
+                    </td>
+                    <td>${{ item.producto.precio|floatformat:2 }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="updateQuantity({{ item.id }}, -1)">-</button>
+                            <input type="number" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" class="form-control text-center" style="width: 60px;" onchange="updateQuantity({{ item.id }}, 0, this.value)">
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1" onclick="updateQuantity({{ item.id }}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td>${{ item.get_total_price|floatformat:2 }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeItem({{ item.id }})">Eliminar</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="4" class="text-end">Total del Carrito:</th>
+                    <td colspan="2" class="fw-bold fs-5">${{ cart.get_total_price|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'inicio' %}" class="btn btn-secondary me-2">Seguir Comprando</a>
+        <button type="button" class="btn btn-warning">Proceder al Pago</button>
+    </div>
+
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        Tu carrito está vacío. ¡Empieza a añadir productos!
+    </div>
+    <div class="text-center">
+        <a href="{% url 'inicio' %}" class="btn btn-warning">Volver a la tienda</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    function showMessage(type, text) {
+        const messagesDiv = document.querySelector('.messages');
+        if (messagesDiv) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${text}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            messagesDiv.innerHTML += alertHtml;
+        } else {
+            // Fallback if .messages div isn't found (e.g., if you remove it)
+            alert(text);
+        }
+    }
+
+    // Function to update quantity or remove item
+    function updateQuantity(itemId, change, exactQuantity = null) {
+        let currentQuantityInput = document.getElementById(`quantity-${itemId}`);
+        let newQuantity;
+
+        if (exactQuantity !== null) {
+            newQuantity = parseInt(exactQuantity);
+        } else {
+            newQuantity = parseInt(currentQuantityInput.value) + change;
+        }
+
+        if (newQuantity < 0) newQuantity = 0; // Prevent negative quantity
+
+        fetch('{% url "update_cart_item_quantity" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                cart_item_id: itemId,
+                quantity: newQuantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showMessage('success', data.message);
+                if (newQuantity === 0) {
+                    // Remove row if quantity is 0
+                    document.getElementById(`cart-item-row-${itemId}`).remove();
+                    // Reload page if no items left or update totals dynamically
+                    if (document.querySelectorAll('tbody tr').length === 0) {
+                        location.reload(); // Reload to show "Cart is empty" message
+                    } else {
+                        // Dynamically update totals if you have more advanced JS
+                        // For now, a simple reload is easier for total price update
+                        location.reload();
+                    }
+                } else {
+                    currentQuantityInput.value = newQuantity;
+                    // You might want to update the subtotal dynamically here too
+                    location.reload(); // Simple reload to update totals for now
+                }
+            } else if (data.error) {
+                showMessage('danger', data.error);
+                // Revert quantity if error
+                currentQuantityInput.value = parseInt(currentQuantityInput.value) - change;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('danger', 'Error al actualizar el carrito.');
+        });
+    }
+
+    // Function to remove item directly
+    function removeItem(itemId) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este producto del carrito?')) {
+            return; // Do nothing if user cancels
+        }
+        fetch('{% url "remove_from_cart" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                cart_item_id: itemId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showMessage('info', data.message);
+                document.getElementById(`cart-item-row-${itemId}`).remove();
+                if (document.querySelectorAll('tbody tr').length === 0) {
+                    location.reload(); // Reload to show "Cart is empty" message
+                } else {
+                    location.reload(); // Simple reload to update totals
+                }
+            } else if (data.error) {
+                showMessage('danger', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('danger', 'Error al eliminar el producto.');
+        });
+    }
+</script>
+{% endblock %}
