@@ -27,12 +27,12 @@
                         </button>
                         <div class="collapse navbar-collapse" id="navbarNav">
                             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                                {# Aquí puedes añadir tus enlaces de navegación principales #}
+                                {# Enlace de Inicio Apuntando a la URL 'inicio' #}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="#">Inicio</a>
+                                    <a class="nav-link" href="{% url 'inicio' %}">Inicio</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="#">Productos</a>
+                                    <a class="nav-link" href="{% url 'producto_list' %}">Productos</a> {# Asumo que quieres que este enlace vaya a la lista de productos #}
                                 </li>
                             </ul>
                             <div class="search-box"> {# Tu caja de búsqueda con estilos personalizados #}

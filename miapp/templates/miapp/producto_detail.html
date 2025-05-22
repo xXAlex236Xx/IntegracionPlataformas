@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Producto: {{ producto.nombre }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9; }
+        h1 { color: #333; text-align: center; }
+        p { margin-bottom: 10px; }
+        strong { display: inline-block; width: 120px; }
+        .actions a { margin-right: 15px; text-decoration: none; color: #007bff; }
+        .actions a:hover { text-decoration: underline; }
+        .back-link { display: block; margin-top: 20px; text-align: center; text-decoration: none; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Detalle de Producto</h1>
+        <p><strong>Código:</strong> {{ producto.codigo }}</p>
+        <p><strong>Nombre:</strong> {{ producto.nombre }}</p>
+        <p><strong>Categoría:</strong> {{ producto.categoria.nombre }}</p>
+        <p><strong>Precio:</strong> ${{ producto.precio|floatformat:2 }}</p>
+        <p><strong>Stock:</strong> {{ producto.stock }} unidades</p>
+        <p><strong>Descripción:</strong> {{ producto.descripcion|default:"Sin descripción." }}</p>
+
+        <div class="actions">
+            <a href="{% url 'producto_update' producto.codigo %}">Editar Producto</a>
+            <a href="{% url 'producto_delete' producto.codigo %}">Eliminar Producto</a>
+        </div>
+        <a href="{% url 'producto_list' %}" class="back-link">Volver a la lista de productos</a>
+    </div>
+</body>
+</html>

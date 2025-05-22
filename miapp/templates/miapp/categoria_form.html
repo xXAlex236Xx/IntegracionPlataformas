@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ form_title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="file"] {
+            border: 1px solid #ced4da;
+            padding: .375rem .75rem;
+            border-radius: .25rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        .back-link { display: inline-block; margin-top: 20px; text-decoration: none; color: #007bff; }
+        .back-link:hover { text-decoration: underline; }
+        .errorlist { color: red; list-style-type: none; padding: 0; margin-top: 5px; }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ form_title }}</h1>
+    {# IMPORTANT: Add enctype="multipart/form-data" for file uploads #}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <small style="color: #666;">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        {# Optional: Display current image if exists and editing #}
+        {% if form.instance.imagen and form.instance.imagen.url %}
+            <div style="margin-bottom: 15px;">
+                <label>Imagen Actual:</label>
+                <img src="{{ form.instance.imagen.url }}" alt="Imagen actual" class="image-preview">
+            </div>
+        {% endif %}
+
+        <button type="submit">Guardar Categoría</button>
+    </form>
+    <p class="back-link"><a href="{% url 'categoria_list' %}">Volver a la lista de categorías</a></p>
+</body>
+</html>

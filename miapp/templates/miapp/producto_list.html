@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Productos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .actions a { margin-right: 10px; text-decoration: none; color: #007bff; }
+        .actions a:hover { text-decoration: underline; }
+        .btn-green {
+            display: inline-block;
+            padding: 8px 15px;
+            margin-bottom: 10px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn-green:hover { background-color: #218838; }
+        .btn-back {
+            display: inline-block;
+            padding: 8px 15px;
+            margin-bottom: 10px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        .btn-back:hover { background-color: #5a6268; }
+        .product-img {
+            max-width: 50px; /* Small size for the table */
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lista de Productos</h1>
+    <a href="{% url 'crud_admin' %}" class="btn-back">Volver al Panel de Administración</a>
+    <a href="{% url 'producto_create' %}" class="btn-green">Crear Nuevo Producto</a>
+    {% if productos %}
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Imagen</th> {# New column for image #}
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.codigo }}</td>
+                <td><a href="{% url 'producto_detail' producto.codigo %}">{{ producto.nombre }}</a></td>
+                <td>{{ producto.categoria.nombre|default:"N/A" }}</td>
+                <td>${{ producto.precio|floatformat:2 }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>
+                    {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="product-img">
+                    {% else %}
+                        No imagen
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <a href="{% url 'producto_update' producto.codigo %}">Editar</a>
+                    <a href="{% url 'producto_delete' producto.codigo %}">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No hay productos registrados.</p>
+    {% endif %}
+
+    <p><a href="{% url 'categoria_list' %}">Ver Categorías</a></p>
+</body>
+</html>
