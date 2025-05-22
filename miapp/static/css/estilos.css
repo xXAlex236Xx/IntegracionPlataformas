@@ -1,3 +1,5 @@
+/* miapp/static/css/estilos.css */
+
 body {
     background-color: #f4f4f4;
 }
@@ -11,59 +13,155 @@ h1 {
     transform: scale(1.05);
     transition: 0.4s ease-in-out;
 }
+
 .btn-warning {
     background-color: #ff9000;
     color: #000;
     font-weight: bold;
     border: none;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    transition: all 0.3 ease;
-
+    transition: all 0.3s ease;
 }
+
 .btn-warning:hover {
     background-color: #e0a800;
     transform: scale(1.05);
     box-shadow: 0 6px 14px rgba(0,0,0,0.3);
-    
 }
 
-header {
+.main-header {
     background-color: #1e1e1e;
     padding: 10px 20px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     position: relative;
     z-index: 2;
-  }
-  
-  .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: white;
-    position: center;
-    top: -45px;
-    left: -850px;
-  }
+}
 
-  .search-box {
+.header-logo {
+    height: 50px;
+}
+
+.header-center-content {
+    /* Las propiedades flex-grow-1 y justify-content: center ya están en base.html */
+}
+
+.navbar {
+    color: white;
+}
+
+.navbar-nav .nav-link {
+    color: white !important;
+    margin-right: 15px;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #ff9000 !important;
+}
+
+.search-box {
     display: flex;
     align-items: center;
     gap: 5px;
-  }
-  
-  .search-box input {
+}
+
+.search-box input {
     padding: 5px 10px;
     border-radius: 20px;
     border: none;
     outline: none;
-  }
-  
-  .search-box button {
+    flex-grow: 1;
+}
+
+.search-box button {
     background-color: yellow;
     border: none;
     border-radius: 100%;
-    padding: 14;
+    padding: 7px 10px;
     cursor: pointer;
-  }
-  
-  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.search-box button i {
+    color: #1e1e1e;
+}
+
+.messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    width: 300px;
+}
+
+.display-4 {
+    color: #ff9000 !important;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.bg-gradient-dark {
+    background: linear-gradient(45deg, #2c3e50, #1a252f);
+}
+
+.text-primary {
+    color: #ff9000 !important;
+}
+
+.card {
+    border: none;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.animated-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+}
+
+.card-header {
+    border-bottom: none;
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.list-group-item {
+    border-color: rgba(0,0,0,.08);
+    border-left: 4px solid transparent;
+    transition: background-color 0.2s ease, border-left-color 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    border-left-color: #ff9000;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 144, 0, 0.08);
+    cursor: pointer;
+}
+
+.badge {
+    min-width: 60px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.75rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+}
+
+.badge.bg-success { background-color: #28a745 !important; }
+.badge.bg-secondary { background-color: #6c757d !important; }
+.badge.bg-primary { background-color: #ff9000 !important; }
+.bg-warning { background-color: #ffc107 !important; }
+.bg-info { background-color: #17a2b8 !important; }
+.bg-success { background-color: #28a745 !important; }
