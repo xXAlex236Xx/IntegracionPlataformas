@@ -1,0 +1,48 @@
+
+Ubicación y Funcionalidad de la API en Ferremas
+La API en el proyecto Ferremas es la capa que permite el intercambio programático de datos entre tu aplicación y otros sistemas o componentes. Esencialmente, es el motor que permite consultar y manipular la información de la ferretería a través de solicitudes HTTP estandarizadas.
+
+Ubicación de la API
+La implementación de la API se realiza utilizando Django REST Framework (DRF) y se encuentra estructurada en los siguientes archivos clave:
+
+miapp/views.py: Este archivo contiene la lógica central de cada endpoint de la API. Aquí se definen las clases (ProductoViewSet, CategoriaViewSet) y funciones (stock_por_sucursal, crear_pedido, contacto, convertir_moneda, add_to_cart, remove_from_cart, update_cart_item_quantity) que procesan las solicitudes HTTP (GET, POST, etc.) y construyen las respuestas JSON.
+
+miapp/serializers.py: En este archivo se especifican las reglas para la conversión de datos. Define cómo los objetos de los modelos de Django (como Producto, Categoria, Pedido) se transforman en formatos adecuados para la API (principalmente JSON) y cómo los datos recibidos en JSON se validan y se convierten de nuevo a objetos de Django.
+
+core/urls.py: Este es el archivo principal de configuración de URL del proyecto. Aquí se mapean las rutas URL (los endpoints a los que accedes) a las vistas de la API definidas en miapp/views.py. Por ejemplo, la URL /api/productos/ se asocia directamente con la lógica para listar productos.
+
+Funcionalidad de la API
+La API de Ferremas cumple con diversas funciones esenciales para la operación del negocio:
+
+Consulta de Productos y Categorías: Proporciona acceso a la información del catálogo.
+
+GET /api/productos/: Obtiene un listado completo de todos los productos disponibles.
+
+GET /api/productos/{codigo}/: Recupera los detalles específicos de un producto usando su código único.
+
+GET /api/categorias/: Ofrece una lista de todas las categorías de productos.
+
+Gestión de Stock por Sucursal: Permite a sistemas internos consultar la disponibilidad de productos en ubicaciones específicas.
+
+GET /sucursales/{id}/stock/: Muestra el stock de productos para una sucursal determinada, identificada por su ID.
+
+Creación de Pedidos: Facilita la generación de nuevos pedidos de productos.
+
+POST /pedidos/: Permite enviar datos para registrar un nuevo pedido, incluyendo los productos y sus cantidades.
+
+Formulario de Contacto: Maneja la recepción de mensajes enviados a través del sitio web.
+
+POST /contacto/: Recibe y procesa los mensajes del formulario de contacto.
+
+Conversión de Moneda: Ofrece una herramienta para transformar valores monetarios entre diferentes divisas. Esta funcionalidad simula la integración con una API externa (como la de un Banco Central).
+
+GET /moneda/convertir/: Realiza conversiones de moneda basándose en los parámetros de origen, destino y monto.
+
+Interacción con el Carrito de Compras: Proporciona endpoints para la manipulación programática del carrito de un usuario.
+
+POST /cart/add/: Añade un producto al carrito o actualiza su cantidad.
+
+POST /cart/remove/: Elimina un producto específico del carrito.
+
+POST /cart/update/: Modifica la cantidad de un producto ya existente en el carrito.
+

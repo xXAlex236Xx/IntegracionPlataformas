@@ -121,3 +121,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Transbank Webpay
+WEBPAY_PLUS_COMMERCE_CODE = "602330089855"
+WEBPAY_PLUS_API_KEY = "071112270966952F87A76D92ED9C623C"
+WEBPAY_PLUS_ENVIRONMENT = "INTEGRACION"

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirigiendo a Webpay...</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message { margin-left: 20px; font-size: 1.2em; color: #555; }
+    </style>
+</head>
+<body onload="document.forms[0].submit()">
+    <div class="spinner"></div>
+    <div class="message">Estamos redirigiendo tu pago a Webpay. Por favor, espera...</div>
+    <form action="{{ url }}" method="POST" style="display: none;">
+        <input type="hidden" name="token_ws" value="{{ token }}">
+        <noscript>
+            <p>Tu navegador no soporta JavaScript. Haz clic en el botón para continuar.</p>
+            <input type="submit" value="Continuar con Webpay">
+        </noscript>
+    </form>
+</body>
+</html>

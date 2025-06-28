@@ -71,9 +71,6 @@ class DetallePedido(models.Model):
 class Contacto(models.Model):
     nombre = models.CharField(max_length=100)
     email = models.EmailField()
-    # Option 1: Make it nullable for existing rows, then add a default for new ones.
-    # asunto = models.CharField(max_length=200, blank=True, null=True) 
-    # Option 2: Provide a fixed default for existing rows, while keeping it non-nullable for new ones
     asunto = models.CharField(max_length=200, default='Consulta General')
     mensaje = models.TextField()
     fecha_envio = models.DateTimeField(auto_now_add=True)

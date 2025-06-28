@@ -4,11 +4,10 @@ from rest_framework.routers import DefaultRouter
 from miapp.views import (
     inicio, registro_view, login_view, logout_view, admin_dashboard_view, borrar_usuario,
     ProductoViewSet, CategoriaViewSet, stock_por_sucursal, crear_pedido,
-    contacto, convertir_moneda,
-    producto_list, producto_detail, producto_create, producto_update, producto_delete,
+    contacto, convertir_moneda, producto_list, producto_detail,
+    producto_create, producto_update, producto_delete,
     categoria_list, categoria_create, categoria_update, categoria_delete,
-    add_to_cart, remove_from_cart, update_cart_item_quantity, view_cart,
-)
+    add_to_cart, remove_from_cart, update_cart_item_quantity, view_cart, iniciar_pago_webpay,confirmar_pago_webpay,)
 from django.contrib.auth import views as auth_views
 from miapp.forms import LoginForm
 
@@ -66,6 +65,9 @@ urlpatterns = [
     path('cart/add/', add_to_cart, name='add_to_cart'),
     path('cart/remove/', remove_from_cart, name='remove_from_cart'),
     path('cart/update/', update_cart_item_quantity, name='update_cart_item_quantity'),
+
+    path('webpay/iniciar_pago/', iniciar_pago_webpay, name='iniciar_pago_webpay'),
+    path('webpay/confirmar_pago/', confirmar_pago_webpay, name='confirmar_pago_webpay'),
 ]
 
 if settings.DEBUG:

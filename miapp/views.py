@@ -1,8 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
+from transbank.webpay.webpay_plus.transaction import Transaction
+import random
+from django.urls import reverse
+import uuid
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Producto, Categoria, Sucursal, Stock, Pedido, Contacto, Cart, CartItem
+from .models import Producto, Categoria, Sucursal, Stock, Pedido, Contacto, Cart, CartItem, DetallePedido
 from .serializers import ProductoSerializer, CategoriaSerializer, StockSerializer, PedidoSerializer, ContactoSerializer
 import requests
 from django.contrib.auth import authenticate, login, logout
@@ -422,3 +427,121 @@ def view_cart(request):
         'cart_items': cart_items,
     }
     return render(request, 'miapp/cart.html', context)
+
+def iniciar_pago_webpay(request):
+    cart = _get_or_create_cart(request)
+    amount = cart.get_total_price()
+
+    if amount <= 0:
+        messages.error(request, 'El monto del carrito debe ser mayor a cero para iniciar el pago.')
+        return redirect('view_cart')
+
+    buy_order = str(random.randrange(1000000, 999999999))
+    session_id = str(uuid.uuid4())[:20]
+
+    return_url = request.build_absolute_uri(reverse('confirmar_pago_webpay'))
+
+    try:
+        Transaction.commerce_code = settings.WEBPAY_PLUS_COMMERCE_CODE
+        Transaction.api_key = settings.WEBPAY_PLUS_API_KEY
+        Transaction.environment = settings.WEBPAY_PLUS_ENVIRONMENT
+        
+        response = Transaction.create(buy_order, session_id, amount, return_url)
+
+        url = response['url']
+        token = response['token']
+
+        request.session['webpay_token'] = token
+        request.session['webpay_buy_order'] = buy_order
+        request.session['webpay_amount'] = str(amount)
+
+        return render(request, 'miapp/webpay_redirect.html', {'url': url, 'token': token})
+
+    except Exception as e:
+        print(f"Error al iniciar transacción Webpay: {e}")
+        messages.error(request, f'Error al iniciar el pago con Webpay: {e}. Por favor, inténtalo de nuevo.')
+        return redirect('view_cart')
+
+
+def confirmar_pago_webpay(request):
+    token = request.POST.get('token_ws') or request.GET.get('token_ws')
+    tbk_token = request.POST.get('TBK_TOKEN') or request.GET.get('TBK_TOKEN')
+
+    if tbk_token:
+        messages.warning(request, 'El pago fue anulado por el usuario en el sitio de WebPay.')
+        if 'webpay_token' in request.session:
+            del request.session['webpay_token']
+        if 'webpay_buy_order' in request.session:
+            del request.session['webpay_buy_order']
+        if 'webpay_amount' in request.session:
+            del request.session['webpay_amount']
+        return render(request, 'miapp/pago_resultado.html', {'status': 'anulado', 'message': 'El pago fue anulado por el usuario.'})
+
+    if not token:
+        messages.error(request, 'No se recibió el token de Webpay para confirmar el pago.')
+        return render(request, 'miapp/pago_resultado.html', {'status': 'error', 'message': 'No se recibió el token de Webpay para confirmar el pago.'})
+
+    Transaction.commerce_code = settings.WEBPAY_PLUS_COMMERCE_CODE
+    Transaction.api_key = settings.WEBPAY_PLUS_API_KEY
+    Transaction.environment = settings.WEBPAY_PLUS_ENVIRONMENT
+
+    try:
+        response = Transaction.commit(token)
+
+        if response and response.get('response_code') == 0:
+            status_pago = 'aprobado'
+            message = f"¡Pago aprobado! Tu transacción fue exitosa. Código de Autorización: {response.get('authorization_code')}, Últimos 4 dígitos tarjeta: {response.get('card_number')[-4:]}."
+            
+            cart = _get_or_create_cart(request)
+            
+            try:
+                sucursal_default = Sucursal.objects.first() 
+                if not sucursal_default:
+                    raise Exception("Error: No hay sucursales configuradas en la base de datos para crear el pedido. Por favor, crea al menos una desde el panel de administración.")
+
+                pedido = Pedido.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    sucursal=sucursal_default,
+                    fecha_creacion=response.get('transaction_date'),
+                    completado=True,
+                )
+
+                for item in cart.items.all():
+                    DetallePedido.objects.create(
+                        pedido=pedido,
+                        producto=item.producto,
+                        cantidad=item.quantity,
+                        precio_unitario=item.producto.precio
+                    )
+                    item.producto.stock -= item.quantity
+                    item.producto.save()
+                
+                messages.success(request, f'Tu pedido (ID: {pedido.id}) ha sido creado exitosamente y el pago aprobado.')
+
+                cart.items.all().delete()
+                
+                if 'webpay_token' in request.session:
+                    del request.session['webpay_token']
+                if 'webpay_buy_order' in request.session:
+                    del request.session['webpay_buy_order']
+                if 'webpay_amount' in request.session:
+                    del request.session['webpay_amount']
+
+            except Exception as db_error:
+                print(f"Error al procesar el pedido después de pago exitoso: {db_error}")
+                messages.error(request, f'Pago aprobado, pero hubo un error al procesar tu pedido: {db_error}. Contacta a soporte y proporciona el ID de transacción.')
+                status_pago = 'error'
+                message += f" (Error interno al procesar el pedido: {db_error})"
+
+        else:
+            status_pago = 'rechazado'
+            error_message_webpay = response.get('response_code', 'N/A')
+            messages.error(request, f"El pago ha sido rechazado. Código de respuesta: {error_message_webpay}. Por favor, verifica tus datos o intenta con otro método de pago.")
+            message = f"El pago ha sido rechazado. Código de respuesta: {error_message_webpay}. Por favor, verifica tus datos o intenta con otro método de pago."
+
+        return render(request, 'miapp/pago_resultado.html', {'status': status_pago, 'response': response, 'message': message})
+
+    except Exception as e:
+        print(f"Error al confirmar transacción Webpay: {e}")
+        messages.error(request, f'Error interno al procesar la confirmación del pago: {e}')
+        return render(request, 'miapp/pago_resultado.html', {'status': 'error', 'message': f'Error interno al procesar la confirmación del pago: {e}'})

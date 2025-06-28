@@ -1,0 +1,57 @@
+{% extends 'miapp/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header text-center">
+                    {% if status == 'aprobado' %}
+                        <h2 class="text-success"><i class="bi bi-check-circle-fill"></i> ¡Pago Exitoso!</h2>
+                        <style> .bi-check-circle-fill { color: #28a745; } </style>
+                    {% elif status == 'rechazado' %}
+                        <h2 class="text-danger"><i class="bi bi-x-circle-fill"></i> Pago Rechazado</h2>
+                        <style> .bi-x-circle-fill { color: #dc3545; } </style>
+                    {% elif status == 'anulado' %}
+                        <h2 class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> Pago Anulado</h2>
+                        <style> .bi-exclamation-triangle-fill { color: #ffc107; } </style>
+                    {% else %}
+                        <h2 class="text-warning"><i class="bi bi-exclamation-circle-fill"></i> Error en el Pago</h2>
+                        <style> .bi-exclamation-circle-fill { color: #ffc107; } </style>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="text-center lead">{{ message }}</p>
+
+                    {% if response and status != 'anulado' %}
+                        <h5 class="mt-4">Detalles de la Transacción:</h5>
+                        <ul class="list-group list-group-flush mb-4">
+                            <li class="list-group-item">**Orden de Compra:** <span class="fw-bold">{{ response.buy_order }}</span></li>
+                            {% if response.authorization_code %}
+                            <li class="list-group-item">**Código de Autorización:** {{ response.authorization_code }}</li>
+                            {% endif %}
+                            {% if response.card_detail %}
+                            <li class="list-group-item">**Tipo de Tarjeta:** {{ response.card_detail.card_type }}</li>
+                            {% endif %}
+                            {% if response.card_number %}
+                            <li class="list-group-item">**Últimos 4 dígitos:** {{ response.card_number }}</li>
+                            {% endif %}
+                            <li class="list-group-item">**Monto:** ${{ response.amount|floatformat:0 }} CLP</li>
+                            <li class="list_group-item">**Estado Transbank:** {{ response.status }}</li>
+                            {% if response.transaction_date %}
+                            <li class="list_group_item">**Fecha/Hora:** {{ response.transaction_date }}</li>
+                            {% endif %}
+                            <li class="list-group-item">**Código de Respuesta:** {{ response.response_code }}</li>
+                        </ul>
+                    {% endif %}
+
+                    <div class="text-center mt-4">
+                        <a href="{% url 'inicio' %}" class="btn btn-primary btn-lg me-2">Volver al Inicio</a>
+                        <a href="{% url 'view_cart' %}" class="btn btn-outline-secondary btn-lg">Ver Carrito</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -68,7 +68,9 @@
 
     <div class="d-flex justify-content-end mt-4">
         <a href="{% url 'inicio' %}" class="btn btn-secondary me-2">Seguir Comprando</a>
-        <button type="button" class="btn btn-warning">Proceder al Pago</button>
+        <a href="{% url 'iniciar_pago_webpay' %}" class="btn btn-success btn-lg">
+            <i class="bi bi-credit-card-fill me-2"></i> Pagar con WebPay
+        </a>
     </div>
 
     {% else %}
