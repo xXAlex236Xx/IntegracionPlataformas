@@ -1,104 +1,123 @@
-{% extends 'miapp/base.html' %} 
+{% extends 'miapp/base.html' %}
 {% load static %}
 
-{% block title %}Ferremas{% endblock %}
+{% block title %}Ferremas - Tu Ferretería Online{% endblock %}
 
 {% block content %}
 
-<div class="position-relative text-center text-white rounded" style="height: 300px; overflow: hidden;">
-    <img src="{% static 'imagenes/bodega.jpg' %}" alt="Fondo" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;">
-    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 2;"></div>
-    <div class="position-relative d-flex flex-column justify-content-center align-items-center h-100 p-5" style="z-index: 3;">
-        <h1 class="display-4 fw-bold" style="color: rgba(255, 255, 255, 0.9);">¡TODO LO QUE NECESITAS PARA CONSTRUIR TUS IDEAS!</h1>
-        <div class="mt-4 d-flex justify-content-center gap-3">
-            <a href="{% url 'producto_list' %}" class="btn btn-warning btn-lg">Explorar productos</a> {# Enlace al CRUD de productos #}
-            <a href="#ofertas-destacadas" class="btn btn-outline-light btn-lg">Ver ofertas</a> {# Añadimos ID para anclaje #}
-        </div>
-    </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+<link rel="stylesheet" href="{% static 'css/estilos.css' %}">
+
+<div id="custom-messages" class="messages-container position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+<div class="position-relative text-center text-white rounded-bottom shadow-lg" style="height: 400px; overflow: hidden;">
+    <img src="{% static 'imagenes/bodega.jpg' %}" alt="Fondo de Ferretería" class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" style="filter: brightness(60%);">
+    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center p-4">
+        <h1 class="display-3 fw-bold animate__animated animate__fadeInDown" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">¡TODO PARA TUS PROYECTOS EN FERREMAS!</h1>
+        <p class="lead mt-3 mb-4 animate__animated animate__fadeInUp animate__delay-1s" style="max-width: 700px; color: rgba(255, 255, 255, 0.9);">
+            Encuentra las mejores herramientas, materiales y equipos para construir, reparar y crear. Calidad y precio en un solo lugar.
+        </p>
+        <div class="d-flex justify-content-center gap-3 animate__animated animate__zoomIn animate__delay-2s">
+            <a href="{% url 'producto_list' %}" class="btn btn-warning btn-lg shadow-sm">
+                <i class="bi bi-tools me-2"></i> Explorar Productos
+            </a>
+            <a href="#ofertas-destacadas" class="btn btn-outline-light btn-lg shadow-sm">
+                <i class="bi bi-tags-fill me-2"></i> Ver Ofertas
+            </a>
+        </div>
+    </div>
 </div>
 
----
-
-<section class="py-5 text-center">
-    <h2 class="mb-4">Explora por categoría</h2>
-    <div class="row justify-content-center">
-        {% if categorias %}
-            {% for categoria in categorias %}
-            <div class="col-6 col-md-3 mb-4">
-                <div class="p-3 border rounded bg-light d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;"> {# Increased min-height for image #}
-                    {% if categoria.imagen %}
-                        <img src="{{ categoria.imagen.url }}" alt="{{ categoria.nombre }}" class="img-fluid mb-2" style="max-height: 100px; object-fit: contain;"> {# Added image for category #}
-                    {% else %}
-                        <img src="{% static 'imagenes/categoria_default.png' %}" alt="Categoría" class="img-fluid mb-2" style="max-height: 100px; object-fit: contain;"> {# Placeholder image #}
-                    {% endif %}
-                    <h5 class="mt-2 mb-auto">{{ categoria.nombre }}</h5>
-                    <a href="{% url 'producto_list' %}?categoria={{ categoria.id }}" class="btn btn-outline-warning mt-2">Ver más</a>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="col-12">
-                <p>No hay categorías disponibles en este momento.</p>
-            </div>
-        {% endif %}
-    </div>
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold text-dark">Explora por Categoría</h2>
+        <div class="row justify-content-center g-4">
+            {% if categorias %}
+                {% for categoria in categorias %}
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <a href="{% url 'producto_list' %}?categoria={{ categoria.id }}" class="text-decoration-none text-dark d-block h-100">
+                        <div class="card h-100 shadow-sm category-card text-center transition-transform">
+                            <div class="card-body d-flex flex-column justify-content-center align-items-center p-3">
+                                {% if categoria.imagen %}
+                                    <img src="{{ categoria.imagen.url }}" alt="{{ categoria.nombre }}" class="img-fluid mb-3" style="max-height: 80px; object-fit: contain;">
+                                {% else %}
+                                    <img src="{% static 'imagenes/categoria_default.png' %}" alt="Categoría por defecto" class="img-fluid mb-3" style="max-height: 80px; object-fit: contain;">
+                                {% endif %}
+                                <h6 class="card-title fw-bold text-uppercase">{{ categoria.nombre }}</h6>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p class="lead text-muted">No hay categorías disponibles en este momento.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </section>
 
----
-
-<section class="bg-light py-5" id="ofertas-destacadas">
-    <div class="container">
-        <h2 class="text-center mb-4">Ofertas destacadas</h2>
-        <div class="row justify-content-center">
-            {% if productos_destacados %}
-                {% for producto in productos_destacados %}
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 text-center">
-                        {% if producto.imagen %}
-                            <img src="{{ producto.imagen.url }}" class="card-img-top mx-auto mt-3" alt="{{ producto.nombre }}" style="max-width: 150px; max-height: 150px; object-fit: contain;">
-                        {% else %}
-                            <img src="{% static 'imagenes/producto_default.png' %}" class="card-img-top mx-auto mt-3" alt="Producto" style="max-width: 150px; max-height: 150px; object-fit: contain;">
-                        {% endif %}
-                        <div class="card-body d-flex flex-column justify-content-between">
-                            <h5 class="card-title fw-bold">{{ producto.nombre }}</h5>
-                            <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
-                            <h5 class="card-title text-danger fw-bold mt-auto">${{ producto.precio|floatformat:2 }}</h5>
-                            {# Add quantity input and Add to Cart button #}
-                            <div class="d-flex align-items-center justify-content-center mt-2 mb-3">
+<section class="py-5 bg-white" id="ofertas-destacadas">
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold text-dark">Productos Destacados y Ofertas</h2>
+        <div class="row justify-content-center g-4">
+            {% if productos_destacados %}
+                {% for producto in productos_destacados %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100 shadow-sm product-card transition-transform">
+                        <a href="{% url 'producto_detail' producto.codigo %}" class="text-decoration-none text-dark d-block">
+                            {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" class="card-img-top mx-auto mt-3" alt="{{ producto.nombre }}" style="max-width: 180px; max-height: 180px; object-fit: contain;">
+                            {% else %}
+                                <img src="{% static 'imagenes/producto_default.png' %}" class="card-img-top mx-auto mt-3" alt="Producto por defecto" style="max-width: 180px; max-height: 180px; object-fit: contain;">
+                            {% endif %}
+                        </a>
+                        <div class="card-body d-flex flex-column justify-content-between text-center p-3">
+                            <h5 class="card-title fw-bold text-truncate" title="{{ producto.nombre }}">{{ producto.nombre }}</h5>
+                            <p class="card-text text-muted small">{{ producto.descripcion|truncatechars:70 }}</p>
+                            <h4 class="card-title text-danger fw-bold mt-2">${{ producto.precio|floatformat:0 }}</h4>
+                            
+                            <div class="d-flex align-items-center justify-content-center mt-3 mb-3">
                                 <input type="number" id="quantity-{{ producto.codigo }}" value="1" min="1" max="{{ producto.stock }}" class="form-control text-center me-2" style="width: 80px;">
-                                <button type="button" class="btn btn-warning" onclick="addToCart('{{ producto.codigo }}', 'quantity-{{ producto.codigo }}')" {% if producto.stock == 0 %}disabled{% endif %}>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="addToCart('{{ producto.codigo }}', 'quantity-{{ producto.codigo }}')" {% if producto.stock == 0 %}disabled{% endif %}>
                                     <i class="bi bi-cart-plus"></i> Añadir
                                 </button>
                             </div>
                             {% if producto.stock == 0 %}
-                                <small class="text-danger">¡Sin stock!</small>
+                                <small class="text-danger fw-bold">¡Sin stock!</small>
+                            {% else %}
+                                <small class="text-success">Stock disponible: {{ producto.stock }}</small>
                             {% endif %}
-                            <a href="{% url 'producto_detail' producto.codigo %}" class="btn btn-outline-primary mt-auto">Ver detalles</a> {# Changed to mt-auto for consistent button placement #}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12">
-                    <p class="text-center">No hay ofertas destacadas en este momento.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
+                            <a href="{% url 'producto_detail' producto.codigo %}" class="btn btn-outline-primary btn-sm mt-3">Ver detalles</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p class="lead text-muted">No hay productos destacados en este momento.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </section>
 
----
-
-<section class="bg-white py-5">
-    <div class="container text-center">
-        <h4>¿Dónde estamos?</h4>
-        <p>📍 Av. Lorem Ipsum 123, Ciudad</p>
-        <p>📞 +56 9 3435 1175 | ✉️ contacto@ferreteriapepe.cl</p>
-        <a href="https://wa.me/56934351175" target="_blank" class="btn btn-success mt-3">
-            <img src="{% static 'imagenes/WhatsApp.jpg' %}" alt="WhatsApp" width="30" class="me-2">
-            Escríbenos por WhatsApp
-        </a>
-    </div>
+<section class="bg-dark text-white py-5">
+    <div class="container text-center">
+        <h2 class="mb-4 fw-bold">¿Necesitas Ayuda? ¡Contáctanos!</h2>
+        <p class="lead mb-4">Estamos aquí para asesorarte en tus proyectos.</p>
+        <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
+            <a href="https://wa.me/56934351175" target="_blank" class="btn btn-success btn-lg shadow-sm d-flex align-items-center">
+                <i class="bi bi-whatsapp me-2 fs-4"></i> Escríbenos por WhatsApp
+            </a>
+            <a href="{% url 'contacto' %}" class="btn btn-outline-light btn-lg shadow-sm d-flex align-items-center">
+                <i class="bi bi-envelope-fill me-2 fs-4"></i> Envíanos un Mensaje
+            </a>
+        </div>
+        <p class="mt-4 mb-0"><i class="bi bi-geo-alt-fill me-2"></i> Av. Lorem Ipsum 123, Ciudad</p>
+        <p class="mb-0"><i class="bi bi-telephone-fill me-2"></i> +56 9 3435 1175</p>
+    </div>
 </section>
 
 <script>
@@ -118,6 +137,47 @@
     }
 
     const csrftoken = getCookie('csrftoken');
+    const MESSAGE_TIMEOUT_SUCCESS = 3000;
+    const MESSAGE_TIMEOUT_ERROR = 5000;
+
+    function showCustomMessage(type, text, timeout) {
+        const messagesContainer = document.getElementById('custom-messages');
+        const alertId = `alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show mb-2 position-relative" role="alert" style="min-width: 300px;">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar progress-bar-striped bg-${type}" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        `;
+        messagesContainer.insertAdjacentHTML('beforeend', alertHtml);
+
+        const currentAlert = document.getElementById(alertId);
+        const progressBar = currentAlert.querySelector('.progress-bar');
+
+        progressBar.style.width = '100%'; 
+        progressBar.style.transition = `width ${timeout / 1000}s linear`;
+        
+        setTimeout(() => {
+            progressBar.style.width = '0%';
+        }, 50);
+
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getInstance(currentAlert);
+            if (bsAlert) {
+                bsAlert.hide();
+            } else {
+                currentAlert.remove();
+            }
+        }, timeout);
+
+        currentAlert.addEventListener('hidden.bs.alert', () => {
+            currentAlert.remove();
+        });
+    }
 
     function addToCart(productCode, quantityInputId) {
         const quantityInput = document.getElementById(quantityInputId);
@@ -125,11 +185,11 @@
         const maxStock = parseInt(quantityInput.max);
 
         if (quantity <= 0) {
-            alert('La cantidad debe ser al menos 1.');
+            showCustomMessage('warning', 'La cantidad debe ser al menos 1.', MESSAGE_TIMEOUT_ERROR);
             return;
         }
         if (quantity > maxStock) {
-            alert(`No puedes añadir más de ${maxStock} unidades. Sólo quedan ${maxStock} en stock.`);
+            showCustomMessage('danger', `No puedes añadir más de ${maxStock} unidades. Sólo quedan ${maxStock} en stock.`, MESSAGE_TIMEOUT_ERROR);
             return;
         }
 
@@ -147,16 +207,28 @@
         .then(response => response.json())
         .then(data => {
             if (data.message) {
-                alert(data.message);
+                showCustomMessage('success', data.message, MESSAGE_TIMEOUT_SUCCESS);
             } else if (data.error) {
-                alert('Error: ' + data.error);
+                showCustomMessage('danger', 'Error: ' + data.error, MESSAGE_TIMEOUT_ERROR);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al añadir el producto al carrito.');
+            showCustomMessage('danger', 'Error al añadir el producto al carrito.', MESSAGE_TIMEOUT_ERROR);
         });
     }
-</script>
 
+    document.addEventListener('DOMContentLoaded', function() {
+        const djangoMessages = document.querySelectorAll('.messages-django .alert');
+        djangoMessages.forEach(msg => {
+            const type = msg.classList.contains('alert-success') ? 'success' :
+                         msg.classList.contains('alert-info') ? 'info' :
+                         msg.classList.contains('alert-warning') ? 'warning' :
+                         msg.classList.contains('alert-danger') ? 'danger' : 'primary';
+            const text = msg.textContent.trim().replace(/\s*×$/, '');
+            showCustomMessage(type, text, (type === 'danger' || type === 'warning') ? MESSAGE_TIMEOUT_ERROR : MESSAGE_TIMEOUT_SUCCESS);
+            msg.remove();
+        });
+    });
+</script>
 {% endblock %}

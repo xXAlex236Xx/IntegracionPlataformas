@@ -165,3 +165,17 @@ h1 {
 .bg-warning { background-color: #ffc107 !important; }
 .bg-info { background-color: #17a2b8 !important; }
 .bg-success { background-color: #28a745 !important; }
+
+.transition-transform {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.category-card:hover,
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.messages-container {
+    max-width: 350px;
+}

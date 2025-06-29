@@ -1,44 +1,57 @@
 {% extends 'miapp/base.html' %}
 {% load static %}
 
-{% block title %}{{ producto.nombre }}{% endendblock %}
+{% block title %}{{ producto.nombre }}{% endblock %}
 
 {% block content %}
+
+<div id="custom-messages" class="messages-container position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
 <div class="container my-5">
     <div class="row">
-        <div class="col-md-5">
-            {% if producto.imagen %}
-                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid rounded shadow-sm">
-            {% else %}
-                <img src="{% static 'imagenes/producto_default.png' %}" alt="No imagen" class="img-fluid rounded shadow-sm">
-            {% endif %}
+        <div class="col-md-6 mb-4 mb-md-0">
+            <div class="product-image-container rounded shadow-sm overflow-hidden d-flex justify-content-center align-items-center bg-light">
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid" style="max-height: 450px; object-fit: contain;">
+                {% else %}
+                    <img src="{% static 'imagenes/producto_default.png' %}" alt="No imagen" class="img-fluid" style="max-height: 450px; object-fit: contain;">
+                {% endif %}
+            </div>
         </div>
-        <div class="col-md-7">
-            <h1 class="mb-3">{{ producto.nombre }}</h1>
-            <p class="lead text-muted">{{ producto.categoria.nombre }}</p>
-            <p class="fs-4 fw-bold text-success">${{ producto.precio|floatformat:2 }}</p>
+        <div class="col-md-6">
+            <h1 class="display-5 fw-bold mb-3">{{ producto.nombre }}</h1>
+            <p class="lead text-muted border-bottom pb-2 mb-3">{{ producto.categoria.nombre }}</p>
             
-            <hr>
+            <p class="fs-2 fw-bold text-success mb-4">${{ producto.precio|floatformat:0 }}</p>
             
             <h4 class="mb-3">Descripción:</h4>
-            <p>{{ producto.descripcion|default:"Sin descripción." }}</p>
+            <p class="text-secondary">{{ producto.descripcion|default:"Este producto no tiene una descripción detallada disponible." }}</p>
             
-            <p class="fw-bold">Stock Disponible: <span class="badge bg-{% if producto.stock > 0 %}success{% else %}danger{% endif %}">{{ producto.stock }}</span></p>
+            <div class="d-flex align-items-center justify-content-between mt-4 mb-4 p-3 bg-light rounded shadow-sm">
+                <p class="fw-bold mb-0">Stock Disponible:</p>
+                <span class="badge fs-5 px-3 py-2 bg-{% if producto.stock > 0 %}success{% else %}danger{% endif %}">
+                    {{ producto.stock }} unidades
+                </span>
+            </div>
 
             <div class="d-flex align-items-center mt-4">
-                <input type="number" id="product-quantity" value="1" min="1" max="{{ producto.stock }}" class="form-control me-2" style="width: 80px;">
-                <button type="button" class="btn btn-warning btn-lg" onclick="addToCart('{{ producto.codigo }}')">
-                    <i class="bi bi-cart-plus"></i> Añadir al Carrito
+                <label for="product-quantity" class="form-label mb-0 me-2">Cantidad:</label>
+                <input type="number" id="product-quantity" value="1" min="1" max="{{ producto.stock }}" class="form-control text-center me-3" style="width: 100px;">
+                <button type="button" class="btn btn-warning btn-lg flex-grow-1" onclick="addToCart('{{ producto.codigo }}')" {% if producto.stock == 0 %}disabled{% endif %}>
+                    <i class="bi bi-cart-plus me-2"></i> Añadir al Carrito
                 </button>
             </div>
+            
             {% if producto.stock == 0 %}
-                <div class="alert alert-warning mt-3" role="alert">
-                    ¡Producto sin stock! No puedes añadirlo al carrito.
+                <div class="alert alert-danger mt-3 animate__animated animate__fadeIn" role="alert">
+                    ¡Producto sin stock en este momento! No se puede añadir al carrito.
                 </div>
             {% endif %}
 
-            <div class="mt-4">
-                <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary">Volver a Productos</a>
+            <div class="mt-4 pt-3 border-top">
+                <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i> Volver a la lista de Productos
+                </a>
             </div>
         </div>
     </div>
@@ -61,18 +74,60 @@
     }
 
     const csrftoken = getCookie('csrftoken');
+    const MESSAGE_TIMEOUT_SUCCESS = 3000;
+    const MESSAGE_TIMEOUT_ERROR = 5000;
+
+    function showCustomMessage(type, text, timeout) {
+        const messagesContainer = document.getElementById('custom-messages');
+        const alertId = `alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show mb-2 position-relative" role="alert" style="min-width: 300px;">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar progress-bar-striped bg-${type}" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        `;
+        messagesContainer.insertAdjacentHTML('beforeend', alertHtml);
+
+        const currentAlert = document.getElementById(alertId);
+        const progressBar = currentAlert.querySelector('.progress-bar');
+
+        progressBar.style.width = '100%'; 
+        progressBar.style.transition = `width ${timeout / 1000}s linear`;
+        
+        setTimeout(() => {
+            progressBar.style.width = '0%';
+        }, 50);
+
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getInstance(currentAlert);
+            if (bsAlert) {
+                bsAlert.hide();
+            } else {
+                currentAlert.remove();
+            }
+        }, timeout);
+
+        currentAlert.addEventListener('hidden.bs.alert', () => {
+            currentAlert.remove();
+        });
+    }
 
     function addToCart(productCode) {
         const quantityInput = document.getElementById('product-quantity');
         const quantity = parseInt(quantityInput.value);
         const maxStock = parseInt(quantityInput.max);
+        const addButton = document.querySelector(`button[onclick="addToCart('${productCode}')"]`);
 
         if (quantity <= 0) {
-            alert('La cantidad debe ser al menos 1.');
+            showCustomMessage('warning', 'La cantidad debe ser al menos 1.', MESSAGE_TIMEOUT_ERROR);
             return;
         }
         if (quantity > maxStock) {
-            alert(`No puedes añadir más de ${maxStock} unidades. Sólo quedan ${maxStock} en stock.`);
+            showCustomMessage('danger', `No puedes añadir más de ${maxStock} unidades. Sólo quedan ${maxStock} en stock.`, MESSAGE_TIMEOUT_ERROR);
             return;
         }
 
@@ -90,16 +145,50 @@
         .then(response => response.json())
         .then(data => {
             if (data.message) {
-                alert(data.message);
-                window.location.href = '{% url "view_cart" %}';
+                showCustomMessage('success', data.message, MESSAGE_TIMEOUT_SUCCESS);
+                if (data.new_stock !== undefined) {
+                    quantityInput.max = data.new_stock;
+                    document.querySelector('.fw-bold .badge').textContent = `${data.new_stock} unidades`;
+                    if (data.new_stock === 0) {
+                        addButton.disabled = true;
+                        document.querySelector('.alert-danger.mt-3').classList.remove('d-none');
+                    }
+                }
             } else if (data.error) {
-                alert('Error: ' + data.error);
+                showCustomMessage('danger', 'Error: ' + data.error, MESSAGE_TIMEOUT_ERROR);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al añadir el producto al carrito.');
+            showCustomMessage('danger', 'Error al añadir el producto al carrito.', MESSAGE_TIMEOUT_ERROR);
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const stockBadge = document.querySelector('.fw-bold .badge');
+        if (stockBadge && parseInt(stockBadge.textContent) === 0) {
+            const addToCartButton = document.querySelector('.btn-warning.btn-lg');
+            if (addToCartButton) {
+                addToCartButton.disabled = true;
+            }
+            const noStockAlert = document.querySelector('.alert-danger.mt-3');
+            if (noStockAlert) {
+                noStockAlert.classList.remove('d-none');
+            }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const djangoMessages = document.querySelectorAll('.messages-django .alert');
+        djangoMessages.forEach(msg => {
+            const type = msg.classList.contains('alert-success') ? 'success' :
+                         msg.classList.contains('alert-info') ? 'info' :
+                         msg.classList.contains('alert-warning') ? 'warning' :
+                         msg.classList.contains('alert-danger') ? 'danger' : 'primary';
+            const text = msg.textContent.trim().replace(/\s*×$/, '');
+            showCustomMessage(type, text, (type === 'danger' || type === 'warning') ? MESSAGE_TIMEOUT_ERROR : MESSAGE_TIMEOUT_SUCCESS);
+            msg.remove();
+        });
+    });
 </script>
 {% endblock %}

@@ -7,8 +7,11 @@
 <div class="container my-5">
     <h1 class="mb-4 text-center">🛒 Tu Carrito de Compras en Ferremas</h1>
 
+    <div id="custom-messages" class="messages-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    </div>
+
     {% if messages %}
-        <div class="messages">
+        <div class="messages-django d-none">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
@@ -116,20 +119,45 @@
     }
 
     const csrftoken = getCookie('csrftoken');
+    const MESSAGE_TIMEOUT = 5000;
+
+    function showCustomMessage(type, text) {
+        const messagesContainer = document.getElementById('custom-messages');
+        const alertId = `alert-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show mb-2 position-relative" role="alert" style="min-width: 300px;">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar progress-bar-striped bg-${type}" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        `;
+        messagesContainer.insertAdjacentHTML('beforeend', alertHtml);
+
+        const currentAlert = document.getElementById(alertId);
+        const progressBar = currentAlert.querySelector('.progress-bar');
+
+        progressBar.style.transition = `width ${MESSAGE_TIMEOUT / 1000}s linear`;
+        progressBar.style.width = '0%';
+
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getInstance(currentAlert);
+            if (bsAlert) {
+                bsAlert.hide();
+            } else {
+                currentAlert.remove();
+            }
+        }, MESSAGE_TIMEOUT);
+
+        currentAlert.addEventListener('hidden.bs.alert', () => {
+            currentAlert.remove();
+        });
+    }
 
     function showMessage(type, text) {
-        const messagesDiv = document.querySelector('.messages');
-        if (messagesDiv) {
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${text}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-            messagesDiv.innerHTML += alertHtml;
-        } else {
-            alert(text);
-        }
+        showCustomMessage(type, text);
     }
 
     function updateQuantity(itemId, change, exactQuantity = null) {
@@ -209,5 +237,20 @@
             showMessage('danger', 'Error al eliminar el producto.');
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const djangoMessages = document.querySelectorAll('.messages-django .alert');
+        djangoMessages.forEach(msg => {
+            const type = msg.classList.contains('alert-success') ? 'success' :
+                         msg.classList.contains('alert-info') ? 'info' :
+                         msg.classList.contains('alert-warning') ? 'warning' :
+                         msg.classList.contains('alert-danger') ? 'danger' : 'primary';
+            const text = msg.textContent.trim().replace(/\s*×$/, '');
+            if (type === 'danger' || type === 'warning') {
+                showCustomMessage(type, text);
+            }
+            msg.remove();
+        });
+    });
 </script>
 {% endblock %}

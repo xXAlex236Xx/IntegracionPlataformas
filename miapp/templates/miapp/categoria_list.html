@@ -1,87 +1,69 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Categorías</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .actions a { margin-right: 10px; text-decoration: none; color: #007bff; }
-        .actions a:hover { text-decoration: underline; }
-        .btn-green {
-            display: inline-block;
-            padding: 8px 15px;
-            margin-bottom: 10px;
-            background-color: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .btn-green:hover { background-color: #218838; }
-        .btn-back {
-            display: inline-block;
-            padding: 8px 15px;
-            margin-bottom: 10px;
-            background-color: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        .btn-back:hover { background-color: #5a6268; }
-        .category-img {
-            max-width: 50px; /* Small size for the table */
-            height: auto;
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
-</head>
-<body>
-    <h1>Lista de Categorías</h1>
-    <a href="{% url 'crud_admin' %}" class="btn-back">Volver al Panel de Administración</a>
-    <a href="{% url 'categoria_create' %}" class="btn-green">Crear Nueva Categoría</a>
+{% extends 'miapp/base.html' %}
+{% load static %}
 
-    {% if categorias %}
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Imagen</th> {# New column for image #}
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for categoria in categorias %}
-            <tr>
-                <td>{{ categoria.id }}</td>
-                <td>{{ categoria.nombre }}</td>
-                <td>{{ categoria.descripcion|default_if_none:"Sin descripción" }}</td>
-                <td>
-                    {% if categoria.imagen %}
-                        <img src="{{ categoria.imagen.url }}" alt="{{ categoria.nombre }}" class="category-img">
-                    {% else %}
-                        No imagen
-                    {% endif %}
-                </td>
-                <td class="actions">
-                    <a href="{% url 'categoria_update' categoria.pk %}">Editar</a>
-                    <a href="{% url 'categoria_delete' categoria.pk %}">Eliminar</a>
-                </td>
-            </tr>
+{% block title %}Categorías - Ferremas{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4 text-center">Gestión de Categorías</h1>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
             {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No hay categorías registradas.</p>
+        </div>
     {% endif %}
 
-    <p><a href="{% url 'producto_list' %}">Ver Productos</a></p>
-</body>
-</html>
+    <div class="d-flex justify-content-between mb-4">
+        <div>
+            <a href="{% url 'crud_admin' %}" class="btn btn-secondary me-2">Ir al Panel de Administración</a>
+            <a href="{% url 'categoria_create' %}" class="btn btn-success">Crear Nueva Categoría</a>
+        </div>
+        {# El botón "Ver Productos" ya está en el navbar general, no es necesario aquí #}
+    </div>
+
+    {% if categorias %}
+    <div class="table-responsive">
+        <table class="table table-hover table-striped shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Descripción</th>
+                    <th scope="col">Imagen</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for categoria in categorias %}
+                <tr>
+                    <td>{{ categoria.id }}</td>
+                    <td>{{ categoria.nombre }}</td>
+                    <td>{{ categoria.descripcion|default_if_none:"Sin descripción" }}</td>
+                    <td class="text-center">
+                        {% if categoria.imagen %}
+                            <img src="{{ categoria.imagen.url }}" alt="{{ categoria.nombre }}" class="img-thumbnail" style="width: 70px; height: 70px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'img/default_category.png' %}" alt="No imagen" class="img-thumbnail" style="width: 70px; height: 70px; object-fit: cover;">
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'categoria_update' categoria.pk %}" class="btn btn-warning btn-sm me-1">Editar</a>
+                        <a href="{% url 'categoria_delete' categoria.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center" role="alert">
+        No hay categorías registradas.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

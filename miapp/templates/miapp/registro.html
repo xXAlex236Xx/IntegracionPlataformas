@@ -1,28 +1,43 @@
 {% extends 'miapp/base.html' %}
+{% load static %}
 
-{% block title %}Registro{% endblock %}
+{% block title %}Registro - Ferremas{% endblock %}
 
 {% block content %}
-<h2>Registro</h2>
-<form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-        <div class="mb-3">
-            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}
-                <div class="form-text">{{ field.help_text }}</div>
-            {% endif %}
-            {% for error in field.errors %}
-                <div class="text-danger">{{ error }}</div>
-            {% endfor %}
+<div class="container my-5">
+    <h2 class="mb-4 text-center">Registro de Usuario</h2>
+
+    {# Bloque de mensajes omitido según tu solicitud #}
+
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        {% for error in form.non_field_errors %}
+                            <div class="alert alert-danger">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    <button type="submit" class="btn btn-warning w-100 mt-3">Registrarse</button>
+                </form>
+                <p class="text-center mt-3">
+                    ¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a>
+                </p>
+            </div>
         </div>
-    {% endfor %}
-    {% if form.non_field_errors %}
-        {% for error in form.non_field_errors %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endfor %}
-    {% endif %}
-    <button type="submit" class="btn btn-warning">Registrarse</button>
-</form>
+    </div>
+</div>
 {% endblock %}

@@ -92,7 +92,7 @@ def crear_pedido(request):
     productos = request.data.get('productos')
 
     if not sucursal_id or not productos:
-        return Response({'error': 'Faltan datos'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Faltan datos.'}, status=status.HTTP_400_BAD_REQUEST)
 
     pedido = Pedido.objects.create(sucursal_id=sucursal_id)
 
@@ -103,7 +103,7 @@ def crear_pedido(request):
             pedido.detallepedido_set.create(producto=producto, cantidad=cantidad, precio_unitario=producto.precio)
         except Producto.DoesNotExist:
             pedido.delete()
-            return Response({'error': f"Producto {item['codigo']} no encontrado"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f"Producto {item['codigo']} no encontrado."}, status=status.HTTP_400_BAD_REQUEST)
 
     serializer = PedidoSerializer(pedido)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -123,7 +123,7 @@ def convertir_moneda(request):
     a = request.query_params.get('a')
 
     if not monto or not de or not a:
-        return Response({'error': 'Parámetros monto, de y a son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Los parámetros "monto", "de" y "a" son requeridos.'}, status=status.HTTP_400_BAD_REQUEST)
 
     url = f"https://api.bancocentral.example/convert?from={de}&to={a}&amount={monto}"
 
@@ -147,24 +147,24 @@ def registro_view(request):
             codigo_admin = form.cleaned_data.get('codigo_admin', '')
 
             if User.objects.filter(username=username).exists():
-                messages.error(request, 'Nombre de usuario ya existe.')
+                messages.error(request, 'El nombre de usuario ya existe.')
             else:
                 user = User.objects.create_user(username=username, email=email, password=password)
                 
                 if codigo_admin == 'ADMIN123':
                     user.is_staff = True
                     user.save()
-                    messages.success(request, 'Usuario administrador creado exitosamente. Inicie sesión.')
+                    messages.success(request, 'Usuario administrador creado exitosamente. ¡Inicia sesión!')
                     return redirect('login')
                 elif not codigo_admin:
-                    messages.success(request, 'Usuario registrado exitosamente. Inicie sesión.')
+                    messages.success(request, 'Usuario registrado exitosamente. ¡Inicia sesión!')
                     return redirect('login')
                 else:
                     user.delete()
-                    messages.error(request, 'Código de administrador incorrecto. Inténtelo de nuevo o regístrese como usuario normal.')
+                    messages.error(request, 'Código de administrador incorrecto. Inténtalo de nuevo o regístrate como usuario normal.')
                     return redirect('registro')
         else:
-            messages.error(request, 'Hubo errores en el formulario. Por favor, corríjalos.')
+            messages.error(request, 'Hubo errores en el formulario. Por favor, corrígelos.')
     else:
         form = RegistroForm()
     
@@ -176,13 +176,13 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            messages.success(request, f'Bienvenido de nuevo, {user.username}!')
+            messages.success(request, f'¡Bienvenido de nuevo, {user.username}!')
             if user.is_staff:
                 return redirect('crud_admin')
             else:
                 return redirect('inicio')
         else:
-            messages.error(request, 'Credenciales incorrectas. Verifique su usuario y contraseña.')
+            messages.error(request, 'Credenciales incorrectas. Verifica tu usuario y contraseña.')
     else:
         form = LoginForm()
     return render(request, 'miapp/login.html', {'form': form})
@@ -213,12 +213,12 @@ def borrar_usuario(request, user_id):
     user_to_delete = get_object_or_404(User, pk=user_id)
     
     if user_to_delete.id == request.user.id:
-        messages.error(request, "No puedes borrar tu propia cuenta desde aquí.")
+        messages.error(request, "No puedes eliminar tu propia cuenta desde aquí.")
         return redirect('crud_admin')
 
     if request.method == 'POST':
         user_to_delete.delete()
-        messages.success(request, f'El usuario "{user_to_delete.username}" ha sido borrado permanentemente.')
+        messages.success(request, f'El usuario "{user_to_delete.username}" ha sido eliminado permanentemente.')
         return redirect('crud_admin')
     
     messages.warning(request, "Operación no permitida por GET.")
@@ -226,8 +226,26 @@ def borrar_usuario(request, user_id):
 
 def producto_list(request):
     productos = Producto.objects.all().order_by('nombre')
-    context = {'productos': productos}
+    categorias = Categoria.objects.all().order_by('nombre')
+    
+    categorias_con_productos = []
+    for categoria in categorias:
+        productos_en_categoria = Producto.objects.filter(categoria=categoria).order_by('nombre')
+        categorias_con_productos.append({
+            'categoria': categoria,
+            'productos': productos_en_categoria
+        })
+    
+    productos_sin_categoria = Producto.objects.filter(categoria__isnull=True).order_by('nombre')
+    if productos_sin_categoria.exists():
+        categorias_con_productos.append({
+            'categoria': {'nombre': 'Sin Categoría', 'id': 'no-category'},
+            'productos': productos_sin_categoria
+        })
+
+    context = {'categorias_con_productos': categorias_con_productos,'productos': productos}
     return render(request, 'miapp/producto_list.html', context)
+
 
 def producto_detail(request, codigo):
     producto = get_object_or_404(Producto, codigo=codigo)
@@ -244,7 +262,7 @@ def producto_create(request):
             messages.success(request, f'Producto "{form.cleaned_data["nombre"]}" creado exitosamente.')
             return redirect('producto_list')
         else:
-            messages.error(request, 'Hubo un error al crear el producto. Por favor, verifique los datos.')
+            messages.error(request, 'Hubo un error al crear el producto. Por favor, verifica los datos.')
     else:
         form = ProductoForm()
     context = {'form': form, 'form_title': 'Crear Nuevo Producto'}
@@ -261,7 +279,7 @@ def producto_update(request, codigo):
             messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente.')
             return redirect('producto_list')
         else:
-            messages.error(request, 'Hubo un error al actualizar el producto. Por favor, verifique los datos.')
+            messages.error(request, 'Hubo un error al actualizar el producto. Por favor, verifica los datos.')
     else:
         form = ProductoForm(instance=producto)
     context = {'form': form, 'form_title': f'Actualizar Producto: {producto.nombre}'}
@@ -296,7 +314,7 @@ def categoria_create(request):
             messages.success(request, f'Categoría "{form.cleaned_data["nombre"]}" creada exitosamente.')
             return redirect('categoria_list')
         else:
-            messages.error(request, 'Hubo un error al crear la categoría. Por favor, verifique los datos.')
+            messages.error(request, 'Hubo un error al crear la categoría. Por favor, verifica los datos.')
     else:
         form = CategoriaForm()
     return render(request, 'miapp/categoria_form.html', {'form': form, 'form_title': 'Crear Nueva Categoría'})
@@ -312,7 +330,7 @@ def categoria_update(request, pk):
             messages.success(request, f'Categoría "{categoria.nombre}" actualizada exitosamente.')
             return redirect('categoria_list')
         else:
-            messages.error(request, 'Hubo un error al actualizar la categoría. Por favor, verifique los datos.')
+            messages.error(request, 'Hubo un error al actualizar la categoría. Por favor, verifica los datos.')
     else:
         form = CategoriaForm(instance=categoria)
     return render(request, 'miapp/categoria_form.html', {'form': form, 'form_title': f'Actualizar Categoría: {categoria.nombre}'})
@@ -335,19 +353,19 @@ def add_to_cart(request):
     quantity = int(request.data.get('quantity', 1))
 
     if not product_code:
-        return Response({'error': 'Product code is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Se requiere el código del producto.'}, status=status.HTTP_400_BAD_REQUEST)
     
     if quantity <= 0:
-        return Response({'error': 'Quantity must be positive.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'La cantidad debe ser un número positivo.'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         producto = Producto.objects.get(codigo=product_code)
     except Producto.DoesNotExist:
-        return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'Producto no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
 
     if producto.stock < quantity:
         messages.error(request, f'No hay suficiente stock para "{producto.nombre}". Stock disponible: {producto.stock}.')
-        return Response({'error': 'Not enough stock available.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'No hay suficiente stock disponible.'}, status=status.HTTP_400_BAD_REQUEST)
 
     cart = _get_or_create_cart(request)
 
@@ -360,7 +378,7 @@ def add_to_cart(request):
     if not created:
         if cart_item.quantity + quantity > producto.stock:
             messages.error(request, f'No puedes añadir más de {producto.stock} unidades de "{producto.nombre}" en total (ya tienes {cart_item.quantity}).')
-            return Response({'error': 'Adding this quantity would exceed available stock.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Añadir esta cantidad excedería el stock disponible.'}, status=status.HTTP_400_BAD_REQUEST)
 
         cart_item.quantity = F('quantity') + quantity
         cart_item.save()
@@ -369,14 +387,14 @@ def add_to_cart(request):
     else:
         messages.success(request, f'"{producto.nombre}" añadido al carrito.')
 
-    return Response({'message': 'Product added to cart successfully.', 'cart_item_id': cart_item.id}, status=status.HTTP_200_OK)
+    return Response({'message': 'Producto añadido al carrito exitosamente.'}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def remove_from_cart(request):
     cart_item_id = request.data.get('cart_item_id')
 
     if not cart_item_id:
-        return Response({'error': 'Cart item ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Se requiere el ID del artículo del carrito.'}, status=status.HTTP_400_BAD_REQUEST)
 
     cart = _get_or_create_cart(request)
 
@@ -385,9 +403,9 @@ def remove_from_cart(request):
         product_name = cart_item.producto.nombre
         cart_item.delete()
         messages.info(request, f'"{product_name}" eliminado del carrito.')
-        return Response({'message': 'Product removed from cart successfully.'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Producto eliminado del carrito exitosamente.'}, status=status.HTTP_200_OK)
     except CartItem.DoesNotExist:
-        return Response({'error': 'Cart item not found in your cart.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'El artículo del carrito no fue encontrado en tu carrito.'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
 def update_cart_item_quantity(request):
@@ -395,7 +413,7 @@ def update_cart_item_quantity(request):
     new_quantity = int(request.data.get('quantity', 0))
 
     if not cart_item_id or new_quantity < 0:
-        return Response({'error': 'Cart item ID and a non-negative quantity are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Se requiere el ID del artículo del carrito y una cantidad no negativa.'}, status=status.HTTP_400_BAD_REQUEST)
 
     cart = _get_or_create_cart(request)
 
@@ -404,20 +422,20 @@ def update_cart_item_quantity(request):
         
         if new_quantity > cart_item.producto.stock:
             messages.error(request, f'No puedes cambiar la cantidad de "{cart_item.producto.nombre}" a {new_quantity}. Stock disponible: {cart_item.producto.stock}.')
-            return Response({'error': 'Quantity exceeds available stock.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'La cantidad excede el stock disponible.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if new_quantity == 0:
             product_name = cart_item.producto.nombre
             cart_item.delete()
             messages.info(request, f'"{product_name}" eliminado del carrito.')
-            return Response({'message': 'Product removed from cart (quantity set to 0).'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Producto eliminado del carrito (cantidad establecida en 0).'}, status=status.HTTP_200_OK)
         else:
             cart_item.quantity = new_quantity
             cart_item.save()
             messages.success(request, f'Cantidad de "{cart_item.producto.nombre}" actualizada a {new_quantity}.')
-            return Response({'message': 'Cart item quantity updated successfully.'}, status=status.HTTP_200_OK)
+            return Response({'message': 'Cantidad del artículo del carrito actualizada exitosamente.'}, status=status.HTTP_200_OK)
     except CartItem.DoesNotExist:
-        return Response({'error': 'Cart item not found in your cart.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'El artículo del carrito no fue encontrado en tu carrito.'}, status=status.HTTP_404_NOT_FOUND)
 
 def view_cart(request):
     cart = _get_or_create_cart(request)
@@ -490,7 +508,7 @@ def confirmar_pago_webpay(request):
 
         if response and response.get('response_code') == 0:
             status_pago = 'aprobado'
-            message = f"¡Pago aprobado! Tu transacción fue exitosa. Código de Autorización: {response.get('authorization_code')}, Últimos 4 dígitos tarjeta: {response.get('card_number')[-4:]}."
+            message = f"¡Pago aprobado! Tu transacción fue exitosa. Código de Autorización: {response.get('authorization_code')}, Últimos 4 dígitos de tarjeta: {response.get('card_number')[-4:]}."
             
             cart = _get_or_create_cart(request)
             
