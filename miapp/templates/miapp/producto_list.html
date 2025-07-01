@@ -1,13 +1,12 @@
 {% extends 'miapp/base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}Productos - Ferremas{% endblock %}
 
 {% block content %}
 <div class="container my-5">
     <h1 class="mb-4 text-center">Nuestros Productos</h1>
-
-    {# Bloque de mensajes eliminado #}
 
     <div class="d-flex justify-content-between mb-4">
         {% if user.is_authenticated and user.is_staff %}
@@ -17,6 +16,17 @@
             </div>
         {% endif %}
     </div>
+
+    {% if clp_to_usd_rate %}
+        <div class="alert alert-info text-center" role="alert">
+            Tasa de cambio actual: 1 USD ≈ {{ 1|div:clp_to_usd_rate|floatformat:0 }} CLP
+            (1 CLP ≈ {{ clp_to_usd_rate|floatformat:4 }} USD)
+        </div>
+    {% else %}
+        <div class="alert alert-warning text-center" role="alert">
+            No se pudo obtener la tasa de cambio actual. Los precios se muestran solo en CLP.
+        </div>
+    {% endif %}
 
     {% if categorias_con_productos %}
         {% for cat_data in categorias_con_productos %}
@@ -34,7 +44,12 @@
                                 <div class="card-body d-flex flex-column">
                                     <h5 class="card-title">{{ producto.nombre }}</h5>
                                     <p class="card-text text-muted small mb-1">Código: {{ producto.codigo }}</p>
-                                    <p class="card-text fw-bold fs-5">${{ producto.precio|floatformat:0 }}</p>
+                                    <p class="card-text fw-bold fs-5">
+                                        ${{ producto.precio|floatformat:0 }} CLP
+                                        {% if clp_to_usd_rate %}
+                                            <br>≈ ${{ producto.precio|mul:clp_to_usd_rate|floatformat:2 }} USD
+                                        {% endif %}
+                                    </p>
                                     <p class="card-text {% if producto.stock <= 5 and producto.stock > 0 %}text-warning{% elif producto.stock == 0 %}text-danger{% else %}text-success{% endif %}">
                                         Stock: {{ producto.stock }} unidades
                                     </p>

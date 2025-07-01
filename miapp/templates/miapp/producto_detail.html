@@ -1,5 +1,6 @@
 {% extends 'miapp/base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block title %}{{ producto.nombre }}{% endblock %}
 
@@ -8,50 +9,80 @@
 <div id="custom-messages" class="messages-container position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
 
 <div class="container my-5">
-    <div class="row">
-        <div class="col-md-6 mb-4 mb-md-0">
-            <div class="product-image-container rounded shadow-sm overflow-hidden d-flex justify-content-center align-items-center bg-light">
-                {% if producto.imagen %}
-                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid" style="max-height: 450px; object-fit: contain;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-lg p-4">
+                <h1 class="mb-4 text-center">{{ producto.nombre }}</h1>
+
+                {% if clp_to_usd_rate %}
+                    <div class="alert alert-info text-center" role="alert">
+                        Tasa de cambio actual: 1 USD ≈ {{ 1|div:clp_to_usd_rate|floatformat:0 }} CLP
+                        (1 CLP ≈ {{ clp_to_usd_rate|floatformat:4 }} USD)
+                    </div>
                 {% else %}
-                    <img src="{% static 'imagenes/producto_default.png' %}" alt="No imagen" class="img-fluid" style="max-height: 450px; object-fit: contain;">
+                    <div class="alert alert-warning text-center" role="alert">
+                        No se pudo obtener la tasa de cambio actual. Los precios se muestran solo en CLP.
+                    </div>
                 {% endif %}
-            </div>
-        </div>
-        <div class="col-md-6">
-            <h1 class="display-5 fw-bold mb-3">{{ producto.nombre }}</h1>
-            <p class="lead text-muted border-bottom pb-2 mb-3">{{ producto.categoria.nombre }}</p>
-            
-            <p class="fs-2 fw-bold text-success mb-4">${{ producto.precio|floatformat:0 }}</p>
-            
-            <h4 class="mb-3">Descripción:</h4>
-            <p class="text-secondary">{{ producto.descripcion|default:"Este producto no tiene una descripción detallada disponible." }}</p>
-            
-            <div class="d-flex align-items-center justify-content-between mt-4 mb-4 p-3 bg-light rounded shadow-sm">
-                <p class="fw-bold mb-0">Stock Disponible:</p>
-                <span class="badge fs-5 px-3 py-2 bg-{% if producto.stock > 0 %}success{% else %}danger{% endif %}">
-                    {{ producto.stock }} unidades
-                </span>
-            </div>
 
-            <div class="d-flex align-items-center mt-4">
-                <label for="product-quantity" class="form-label mb-0 me-2">Cantidad:</label>
-                <input type="number" id="product-quantity" value="1" min="1" max="{{ producto.stock }}" class="form-control text-center me-3" style="width: 100px;">
-                <button type="button" class="btn btn-warning btn-lg flex-grow-1" onclick="addToCart('{{ producto.codigo }}')" {% if producto.stock == 0 %}disabled{% endif %}>
-                    <i class="bi bi-cart-plus me-2"></i> Añadir al Carrito
-                </button>
-            </div>
-            
-            {% if producto.stock == 0 %}
-                <div class="alert alert-danger mt-3 animate__animated animate__fadeIn" role="alert">
-                    ¡Producto sin stock en este momento! No se puede añadir al carrito.
+                <div class="row">
+                    <div class="col-md-6 text-center">
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" class="img-fluid rounded shadow-sm mb-3" alt="{{ producto.nombre }}" style="max-height: 400px; object-fit: contain;">
+                        {% else %}
+                            <img src="{% static 'img/default_product.png' %}" class="img-fluid rounded shadow-sm mb-3" alt="Imagen no disponible" style="max-height: 400px; object-fit: contain;">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <p class="lead">{{ producto.descripcion|default_if_none:"Sin descripción detallada." }}</p>
+                        <hr>
+                        <p class="fs-4 fw-bold">
+                            Precio: ${{ producto.precio|floatformat:0 }} CLP
+                            {% if clp_to_usd_rate %}
+                                <br><small class="text-muted">≈ ${{ producto.precio|mul:clp_to_usd_rate|floatformat:2 }} USD</small>
+                            {% endif %}
+                        </p>
+                        <p class="fs-5">Código: <span class="fw-bold">{{ producto.codigo }}</span></p>
+                        <p class="fs-5">Categoría: 
+                            {% if producto.categoria %}
+                                <span class="badge bg-secondary">{{ producto.categoria.nombre }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">Sin categoría</span>
+                            {% endif %}
+                        </p>
+                        <p class="fs-5">
+                            Stock: 
+                            <span class="fw-bold {% if producto.stock <= 5 and producto.stock > 0 %}text-warning{% elif producto.stock == 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ producto.stock }} unidades
+                            </span>
+                        </p>
+                        <div class="d-flex align-items-center mt-4">
+                            <label for="product-quantity" class="form-label mb-0 me-2">Cantidad:</label>
+                            <input type="number" id="product-quantity" value="1" min="1" max="{{ producto.stock }}" class="form-control text-center me-3" style="width: 100px;">
+                            <button type="button" class="btn btn-warning btn-lg flex-grow-1" onclick="addToCart('{{ producto.codigo }}')" {% if producto.stock == 0 %}disabled{% endif %}>
+                                <i class="bi bi-cart-plus me-2"></i> Añadir al Carrito
+                            </button>
+                        </div>
+                        
+                        {% if producto.stock == 0 %}
+                            <div class="alert alert-danger mt-3 animate__animated animate__fadeIn" role="alert">
+                                ¡Producto sin stock en este momento! No se puede añadir al carrito.
+                            </div>
+                        {% endif %}
+
+                        <div class="mt-4 pt-3 border-top">
+                            <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i> Volver a la lista de Productos
+                            </a>
+                        </div>
+                        {% if user.is_authenticated and user.is_staff %}
+                            <div class="d-grid gap-2 mt-4">
+                                <a href="{% url 'producto_update' producto.codigo %}" class="btn btn-warning">Editar Producto</a>
+                                <a href="{% url 'producto_delete' producto.codigo %}" class="btn btn-danger">Eliminar Producto</a>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
-
-            <div class="mt-4 pt-3 border-top">
-                <a href="{% url 'producto_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i> Volver a la lista de Productos
-                </a>
             </div>
         </div>
     </div>

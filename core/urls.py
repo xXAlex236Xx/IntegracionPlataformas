@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from miapp.views import (
     inicio, registro_view, login_view, logout_view, admin_dashboard_view, borrar_usuario,
     ProductoViewSet, CategoriaViewSet, stock_por_sucursal, crear_pedido,
-    contacto, convertir_moneda, producto_list, producto_detail,
+    contacto, producto_list, producto_detail,
     producto_create, producto_update, producto_delete,
     categoria_list, categoria_create, categoria_update, categoria_delete,
     add_to_cart, remove_from_cart, update_cart_item_quantity, view_cart, iniciar_pago_webpay,confirmar_pago_webpay,)
@@ -39,7 +39,6 @@ urlpatterns = [
     path('sucursales/<int:id>/stock', stock_por_sucursal),
     path('pedidos', crear_pedido),
     path('contacto', contacto, name='contacto'),
-    path('moneda/convertir', convertir_moneda),
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 

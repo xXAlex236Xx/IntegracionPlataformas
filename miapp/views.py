@@ -16,6 +16,7 @@ from .forms import RegistroForm, LoginForm, ProductoForm, CategoriaForm
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db.models import F
+from django.conf import settings
 
 def _get_or_create_cart(request):
     if request.user.is_authenticated:
@@ -116,26 +117,6 @@ def contacto(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-def convertir_moneda(request):
-    monto = request.query_params.get('monto')
-    de = request.query_params.get('de')
-    a = request.query_params.get('a')
-
-    if not monto or not de or not a:
-        return Response({'error': 'Los parámetros "monto", "de" y "a" son requeridos.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    url = f"https://api.bancocentral.example/convert?from={de}&to={a}&amount={monto}"
-
-    try:
-        r = requests.get(url)
-        r.raise_for_status()
-        data = r.json()
-        return Response(data)
-    except requests.exceptions.RequestException as e:
-        return Response({'error': f'Error al conectar con la API externa: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except Exception as e:
-        return Response({'error': f'Ocurrió un error inesperado: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def registro_view(request):
     if request.method == 'POST':
@@ -224,32 +205,15 @@ def borrar_usuario(request, user_id):
     messages.warning(request, "Operación no permitida por GET.")
     return redirect('crud_admin')
 
-def producto_list(request):
-    productos = Producto.objects.all().order_by('nombre')
-    categorias = Categoria.objects.all().order_by('nombre')
-    
-    categorias_con_productos = []
-    for categoria in categorias:
-        productos_en_categoria = Producto.objects.filter(categoria=categoria).order_by('nombre')
-        categorias_con_productos.append({
-            'categoria': categoria,
-            'productos': productos_en_categoria
-        })
-    
-    productos_sin_categoria = Producto.objects.filter(categoria__isnull=True).order_by('nombre')
-    if productos_sin_categoria.exists():
-        categorias_con_productos.append({
-            'categoria': {'nombre': 'Sin Categoría', 'id': 'no-category'},
-            'productos': productos_sin_categoria
-        })
-
-    context = {'categorias_con_productos': categorias_con_productos,'productos': productos}
-    return render(request, 'miapp/producto_list.html', context)
-
-
 def producto_detail(request, codigo):
     producto = get_object_or_404(Producto, codigo=codigo)
-    context = {'producto': producto}
+
+    clp_to_usd_rate = get_exchange_rate(base_currency='USD', target_currency='CLP')
+    
+    context = {
+        'producto': producto,
+        'clp_to_usd_rate': clp_to_usd_rate,
+    }
     return render(request, 'miapp/producto_detail.html', context)
 
 @user_passes_test(lambda u: u.is_staff)
@@ -563,3 +527,69 @@ def confirmar_pago_webpay(request):
         print(f"Error al confirmar transacción Webpay: {e}")
         messages.error(request, f'Error interno al procesar la confirmación del pago: {e}')
         return render(request, 'miapp/pago_resultado.html', {'status': 'error', 'message': f'Error interno al procesar la confirmación del pago: {e}'})
+    
+def get_exchange_rate(base_currency='USD', target_currency='CLP'):
+    api_key = settings.EXCHANGE_RATE_API_KEY
+
+    if not api_key:
+        print("ERROR: La clave API (EXCHANGE_RATE_API_KEY) no está configurada en settings.py. No se puede obtener la tasa de cambio.")
+        return None
+
+    API_URL = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
+
+    try:
+        response = requests.get(API_URL, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get('result') == 'success' and 'conversion_rates' in data and target_currency in data['conversion_rates']:
+            usd_to_clp_rate = data['conversion_rates'][target_currency]
+            if usd_to_clp_rate > 0:
+                return 1 / usd_to_clp_rate 
+            else:
+                print(f"Error: La tasa de cambio de {target_currency} para {base_currency} es cero o inválida.")
+                return None
+        else:
+            error_type = data.get('error-type', 'desconocido')
+            print(f"Error en la respuesta de la API de tasa de cambio: {error_type}. Respuesta completa: {data}")
+            return None
+
+    except requests.exceptions.Timeout:
+        print("Error: La solicitud a la API de tasa de cambio excedió el tiempo de espera.")
+        return None
+    except requests.exceptions.ConnectionError:
+        print("Error: No se pudo conectar a la API de tasa de cambio. Verifica tu conexión a internet.")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error general de solicitud HTTP a la API de tasa de cambio: {e}")
+        return None
+    except Exception as e:
+        print(f"Error inesperado al procesar la tasa de cambio: {e}")
+        return None
+
+def producto_list(request):
+
+    categorias = Categoria.objects.all().order_by('nombre')
+
+    categorias_con_productos = []
+    for categoria in categorias:
+        productos_en_categoria = Producto.objects.filter(categoria=categoria).order_by('nombre')
+        categorias_con_productos.append({
+            'categoria': categoria,
+            'productos': productos_en_categoria
+        })
+    
+    productos_sin_categoria = Producto.objects.filter(categoria__isnull=True).order_by('nombre')
+    if productos_sin_categoria.exists():
+        categorias_con_productos.append({
+            'categoria': {'nombre': 'Sin Categoría', 'id': 'no-category'},
+            'productos': productos_sin_categoria
+        })
+
+    clp_to_usd_rate = get_exchange_rate(base_currency='USD', target_currency='CLP')
+    
+    context = {
+        'categorias_con_productos': categorias_con_productos,
+        'clp_to_usd_rate': clp_to_usd_rate,
+    }
+    return render(request, 'miapp/producto_list.html', context)
