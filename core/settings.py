@@ -149,3 +149,5 @@ else:
     }
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'

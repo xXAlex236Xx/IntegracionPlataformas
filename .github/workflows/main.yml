@@ -9,6 +9,20 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - name: Checkout code
@@ -22,27 +36,30 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        # Instala todas las dependencias
         pip install -r requirements.txt
-        pip install pytest-django
-        pip install gunicorn dj-database-url whitenoise
+        pip install psycopg2-binary pytest-django gunicorn dj-database-url whitenoise
 
-    - name: Run Django migrations (CI check only)
+    - name: Wait for PostgreSQL and Run Migrations
+      env:
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
+        DJANGO_SETTINGS_MODULE: core.settings
       run: |
-        python manage.py check
+        for i in `seq 1 10`; do
+          nc -z localhost 5432 && break
+          echo "Waiting for Postgres to be ready..."
+          sleep 5
+        done
+        python manage.py migrate
 
     - name: Run tests
       env:
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
         SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY_CI || 'una_clave_secreta_dummy_para_ci' }}
         EXCHANGE_RATE_API_KEY: ${{ secrets.EXCHANGE_RATE_API_KEY }}
         DJANGO_SETTINGS_MODULE: core.settings
       run: |
-        # Usamos --ds=core.settings para asegurar que toma la configuración
-        # --nomigrations para evitar problemas con migraciones en tests
-        # --reuse-db (sin el =false) a veces funciona para limpiar
-        # Pero, la mejor opción es confiar en el comportamiento default con bases de datos aisladas
-        pytest --fail-on-template-vars # Esto es opcional, pero buena práctica
-        # Si sigue fallando, podríamos intentar:
-        # pytest --create-db # O solo pytest (si el default es crear)
+        pytest
 
     - name: Deploy to Railway
       if: success()
@@ -50,7 +67,7 @@ jobs:
         curl -fsSL https://railway.app/install.sh | sh
         railway login --token ${{ secrets.RAILWAY_TOKEN }}
         railway link ${{ secrets.RAILWAY_PROJECT_ID }} --service ${{ secrets.RAILWAY_SERVICE_ID }}
-        railway deploy --service ${{ secrets.RAILWAY_SERVICE_ID }} # Despliega
+        railway deploy --service ${{ secrets.RAILWAY_SERVICE_ID }}
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
