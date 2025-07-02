@@ -65,7 +65,8 @@ jobs:
       if: success()
       run: |
         curl -fsSL https://railway.app/install.sh | sh
-        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        export RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }}
+        railway login
         railway link ${{ secrets.RAILWAY_PROJECT_ID }} --service ${{ secrets.RAILWAY_SERVICE_ID }}
         railway deploy --service ${{ secrets.RAILWAY_SERVICE_ID }}
       env:
