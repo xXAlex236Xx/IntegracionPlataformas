@@ -20,19 +20,15 @@ jobs:
         python-version: '3.13'
 
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        # Estas se instalarán desde requirements.txt, pero no está de más listarlas aquí
-        # para recordar que son necesarias para el despliegue.
-        # pip install gunicorn dj-database-url whitenoise 
-        # pip install pytest-django # Ya debería estar en requirements.txt
+  run: |
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+    pip install pytest-django
+    pip install gunicorn dj-database-url whitenoise
 
     - name: Run Django migrations (CI check only)
       run: |
-        python manage.py check # Corre las comprobaciones de Django
-        # No corremos migrate aquí porque no tenemos una DB de test/producción real en el CI para migrar
-        # Esto es más para asegurar que el modelo es consistente.
+        python manage.py check
 
     - name: Run tests
       env:
@@ -40,14 +36,14 @@ jobs:
         EXCHANGE_RATE_API_KEY: ${{ secrets.EXCHANGE_RATE_API_KEY }}
         DJANGO_SETTINGS_MODULE: core.settings
       run: |
-        pytest # Ejecuta tus pruebas de pytest
+        pytest
 
     - name: Deploy to Railway
       if: success()
       run: |
-        curl -fsSL https://railway.app/install.sh | sh # Instala la CLI de Railway
-        railway login --token ${{ secrets.RAILWAY_TOKEN }} # Inicia sesión en Railway
-        railway link ${{ secrets.RAILWAY_PROJECT_ID }} --service ${{ secrets.RAILWAY_SERVICE_ID }} # Vincula a tu proyecto/servicio
+        curl -fsSL https://railway.app/install.sh | sh
+        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+        railway link ${{ secrets.RAILWAY_PROJECT_ID }} --service ${{ secrets.RAILWAY_SERVICE_ID }}
         railway deploy --service ${{ secrets.RAILWAY_SERVICE_ID }} # Despliega
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
