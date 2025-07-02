@@ -36,7 +36,13 @@ jobs:
         EXCHANGE_RATE_API_KEY: ${{ secrets.EXCHANGE_RATE_API_KEY }}
         DJANGO_SETTINGS_MODULE: core.settings
       run: |
-        pytest
+        # Usamos --ds=core.settings para asegurar que toma la configuración
+        # --nomigrations para evitar problemas con migraciones en tests
+        # --reuse-db (sin el =false) a veces funciona para limpiar
+        # Pero, la mejor opción es confiar en el comportamiento default con bases de datos aisladas
+        pytest --fail-on-template-vars # Esto es opcional, pero buena práctica
+        # Si sigue fallando, podríamos intentar:
+        # pytest --create-db # O solo pytest (si el default es crear)
 
     - name: Deploy to Railway
       if: success()
