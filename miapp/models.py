@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.core.validators import MinValueValidator
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -16,11 +17,11 @@ class Categoria(models.Model):
 
 class Producto(models.Model):
     codigo = models.CharField(max_length=20, unique=True, primary_key=True)
-    nombre = models.CharField(max_length=200)
+    nombre = models.CharField(max_length=200, blank=False)
     descripcion = models.TextField(blank=True, null=True)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.IntegerField(default=0)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0.0)])
+    stock = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
 
     def __str__(self):

@@ -350,7 +350,10 @@ def add_to_cart(request):
         messages.success(request, f'Cantidad de "{producto.nombre}" actualizada a {cart_item.quantity} en el carrito.')
     else:
         messages.success(request, f'"{producto.nombre}" añadido al carrito.')
-
+    
+    producto.stock -= quantity
+    producto.save()
+    
     return Response({'message': 'Producto añadido al carrito exitosamente.'}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
