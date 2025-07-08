@@ -62,7 +62,7 @@ jobs:
 
     - name: Deploy to Railway with Action
       if: success()
-      uses: railwayapp/github-action@v1.0.4
+      uses: railwayapp/deploy-action@v3
       with:
         service_id: ${{ secrets.RAILWAY_SERVICE_ID }}
         project_id: ${{ secrets.RAILWAY_PROJECT_ID }}
