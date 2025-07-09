@@ -67,5 +67,11 @@ jobs:
         RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
       run: |
+        echo "Installing Railway CLI..."
+        npm install -g @railwaydev/cli
+
+        echo "Adding npm global bin to PATH..."
+        export PATH=$PATH:$(npm bin -g)
+
         echo "Attempting Railway deployment..."
         railway deploy --detach
