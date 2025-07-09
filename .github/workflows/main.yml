@@ -74,7 +74,7 @@ jobs:
         export PATH=$PATH:$(npm bin -g)
 
         echo "Checking Railway authentication..."
-        railway whoami
+        RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }} railway whoami
 
         echo "Attempting Railway deployment..."
-        railway up --detach
+        RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }} railway up --detach
