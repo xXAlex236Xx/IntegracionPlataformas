@@ -71,10 +71,10 @@ jobs:
         npm install -g @railway/cli
 
         echo "Adding npm global bin to PATH..."
-        export PATH=$PATH:$(npm bin -g)
+        export RAILWAY_TOKEN="${{ secrets.RAILWAY_TOKEN }}"
 
         echo "Checking Railway authentication..."
-        RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }} railway whoami
+        railway whoami
 
         echo "Attempting Railway deployment..."
-        RAILWAY_TOKEN=${{ secrets.RAILWAY_TOKEN }} railway up --detach
+        railway up --detach
