@@ -77,4 +77,4 @@ jobs:
         railway whoami
 
         echo "Attempting Railway deployment..."
-        railway up --detach 
+        railway up --detach
