@@ -68,7 +68,7 @@ jobs:
         RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
       run: |
         echo "Installing Railway CLI..."
-        npm install -g railway
+        npm install -g @railway/cli
 
         echo "Adding npm global bin to PATH..."
         export PATH=$PATH:$(npm bin -g)
