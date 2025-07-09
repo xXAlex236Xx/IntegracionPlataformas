@@ -60,10 +60,12 @@ jobs:
       run: |
         pytest
 
-    - name: Deploy to Railway with Action
+    - name: Install Railway CLI and Deploy
       if: success()
-      uses: Railwayapp/deploy-action@v3
-      with:
-        service_id: ${{ secrets.RAILWAY_SERVICE_ID }}
-        project_id: ${{ secrets.RAILWAY_PROJECT_ID }}
-        token: ${{ secrets.RAILWAY_TOKEN }}
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+      run: |
+        echo "Attempting Railway deployment..."
+        railway deploy --detach
