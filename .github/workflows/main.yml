@@ -74,4 +74,4 @@ jobs:
         export PATH=$PATH:$(npm bin -g)
 
         echo "Attempting Railway deployment..."
-        railway deploy --detach
+        railway up --detach
