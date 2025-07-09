@@ -73,5 +73,8 @@ jobs:
         echo "Adding npm global bin to PATH..."
         export PATH=$PATH:$(npm bin -g)
 
+        echo "Logging into Railway..."
+        railway login --token ${{ secrets.RAILWAY_TOKEN }}
+
         echo "Attempting Railway deployment..."
         railway up --detach
