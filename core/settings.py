@@ -7,9 +7,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-sl-v-efym_f1&dg6c6-qayk5iaga$h98itx1f9)c+l3_ja%t3)'
 
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DEBUG = False
 
-ALLOWED_HOSTS = ['YOUR_RAILWAY_APP_DOMAIN.railway.app', 'localhost', '.railway.app']
+ALLOWED_HOSTS = ['localhost', '*']
 
 LOGIN_REDIRECT_URL = '/'
 
