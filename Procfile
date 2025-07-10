@@ -1,1 +1,1 @@
-web: gunicorn IntegracionPlataformas.wsgi:application
+web: gunicorn core.wsgi:application
